@@ -1,4 +1,8 @@
+
+import { useState } from 'react';
+
 import React, { useState } from 'react';
+
 
 interface Episode {
     id: string;
@@ -6,13 +10,31 @@ interface Episode {
     description: string;
     publishDate: string;
     duration: string;
+
+    status: 'draft' | 'published';
+    audioFile?: string;
+
     status: 'draft' | 'scheduled' | 'published';
     platforms: string[];
+
 }
 
 interface PodcastStats {
     totalEpisodes: number;
     totalPlays: number;
+
+    rssUrl: string;
+}
+
+const Dashboard: React.FC = () => {
+    const [activeTab, setActiveTab] = useState<'overview' | 'episodes'>('overview');
+
+    // Mock data - replace with real data from your backend
+    const [stats] = useState<PodcastStats>({
+        totalEpisodes: 5,
+        totalPlays: 247,
+        rssUrl: 'https://podpilot.com/feeds/your-podcast.xml'
+
     totalDownloads: number;
     monthlyGrowth: number;
 }
@@ -26,11 +48,37 @@ const Dashboard: React.FC = () => {
         totalPlays: 15420,
         totalDownloads: 8932,
         monthlyGrowth: 12.5
+
     });
 
     const [recentEpisodes] = useState<Episode[]>([
         {
             id: '1',
+
+            title: 'Welcome to My Podcast',
+            description: 'Introduction episode where I talk about what to expect',
+            publishDate: '2025-05-28',
+            duration: '12:34',
+            status: 'published',
+            audioFile: 'welcome-episode.mp3'
+        },
+        {
+            id: '2',
+            title: 'Episode 2: Getting Started',
+            description: 'Tips for new podcasters and content creators',
+            publishDate: '2025-06-01',
+            duration: '18:22',
+            status: 'published',
+            audioFile: 'episode-2.mp3'
+        },
+        {
+            id: '3',
+            title: 'Upcoming Episode',
+            description: 'Working on the next episode...',
+            publishDate: '',
+            duration: '0:00',
+            status: 'draft'
+
             title: 'Getting Started with Podcasting',
             description: 'A beginner\'s guide to starting your first podcast',
             publishDate: '2025-05-28',
@@ -55,13 +103,16 @@ const Dashboard: React.FC = () => {
             duration: '0:00',
             status: 'draft',
             platforms: []
+
         }
     ]);
 
     const getStatusColor = (status: Episode['status']) => {
         switch (status) {
             case 'published': return '#1A8C67';
+
             case 'scheduled': return '#4285F4';
+
             case 'draft': return '#6C757D';
             default: return '#6C757D';
         }
@@ -70,7 +121,9 @@ const Dashboard: React.FC = () => {
     const getStatusText = (status: Episode['status']) => {
         switch (status) {
             case 'published': return 'Published';
+
             case 'scheduled': return 'Scheduled';
+
             case 'draft': return 'Draft';
             default: return 'Unknown';
         }
@@ -114,10 +167,17 @@ const Dashboard: React.FC = () => {
                         </h1>
 
                         <nav style={{ display: 'flex', gap: '1.5rem' }}>
+
+                            {['overview', 'episodes'].map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab as 'overview' | 'episodes')}
+
                             {['overview', 'episodes', 'analytics'].map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab as any)}
+
                                     style={{
                                         background: 'none',
                                         border: 'none',
@@ -204,7 +264,11 @@ const Dashboard: React.FC = () => {
                                 margin: 0,
                                 fontFamily: 'Satoshi, sans-serif'
                             }}>
+
+                                Upload episodes, manage your RSS feed, and let listeners discover your content.
+
                                 Ready to create your next episode? Your podcast is looking great!
+
                             </p>
                         </div>
 
@@ -246,9 +310,16 @@ const Dashboard: React.FC = () => {
 
                             <div style={{
                                 backgroundColor: 'white',
+
+                                borderRadius: '8px',
+                                padding: '1.5rem',
+                                border: '1px solid #E8E8E8',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+
                                 borderRadius: '12px',
                                 padding: '1.5rem',
                                 border: '1px solid #E5E7EB'
+
                             }}>
                                 <h3 style={{
                                     fontFamily: 'Satoshi, sans-serif',
@@ -274,9 +345,16 @@ const Dashboard: React.FC = () => {
 
                             <div style={{
                                 backgroundColor: 'white',
+
+                                borderRadius: '8px',
+                                padding: '1.5rem',
+                                border: '1px solid #E8E8E8',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+
                                 borderRadius: '12px',
                                 padding: '1.5rem',
                                 border: '1px solid #E5E7EB'
+
                             }}>
                                 <h3 style={{
                                     fontFamily: 'Satoshi, sans-serif',
@@ -287,6 +365,36 @@ const Dashboard: React.FC = () => {
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em'
                                 }}>
+
+                                    RSS Feed
+                                </h3>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}>
+                  <span style={{
+                      fontSize: '0.875rem',
+                      color: '#212529',
+                      fontFamily: 'Satoshi, sans-serif',
+                      fontWeight: '500'
+                  }}>
+                    Active
+                  </span>
+                                    <button style={{
+                                        padding: '0.25rem 0.75rem',
+                                        fontSize: '0.75rem',
+                                        backgroundColor: '#F8F9FF',
+                                        color: '#4285F4',
+                                        border: '1px solid #4285F4',
+                                        borderRadius: '6px',
+                                        fontFamily: 'Satoshi, sans-serif',
+                                        cursor: 'pointer'
+                                    }}>
+                                        Copy URL
+                                    </button>
+                                </div>
+
                                     Downloads
                                 </h3>
                                 <p style={{
@@ -326,6 +434,7 @@ const Dashboard: React.FC = () => {
                                 }}>
                                     +{stats.monthlyGrowth}%
                                 </p>
+
                             </div>
                         </div>
 
@@ -344,11 +453,19 @@ const Dashboard: React.FC = () => {
                                 color: '#212529',
                                 margin: '0 0 1.5rem 0'
                             }}>
+
+                                Your Episodes
+                            </h2>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {recentEpisodes.map((episode: Episode) => (
+
                                 Recent Episodes
                             </h2>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {recentEpisodes.map((episode) => (
+
                                     <div
                                         key={episode.id}
                                         style={{
@@ -357,8 +474,13 @@ const Dashboard: React.FC = () => {
                                             alignItems: 'center',
                                             padding: '1rem',
                                             backgroundColor: '#FAFAFA',
+
+                                            borderRadius: '8px',
+                                            border: '1px solid #E8E8E8'
+
                                             borderRadius: '12px',
                                             border: '1px solid #E5E7EB'
+
                                         }}
                                     >
                                         <div style={{ flex: 1 }}>
@@ -389,7 +511,11 @@ const Dashboard: React.FC = () => {
                             color: '#6C757D',
                             fontFamily: 'Satoshi, sans-serif'
                         }}>
+
+                          {episode.publishDate || 'Not published'}
+
                           {episode.publishDate || 'Not scheduled'}
+
                         </span>
                                                 <span style={{
                                                     fontSize: '0.8rem',
@@ -398,6 +524,21 @@ const Dashboard: React.FC = () => {
                                                 }}>
                           {episode.duration}
                         </span>
+
+                                                {episode.status === 'published' && episode.audioFile && (
+                                                    <audio
+                                                        controls
+                                                        style={{
+                                                            height: '30px',
+                                                            fontSize: '0.8rem'
+                                                        }}
+                                                    >
+                                                        <source src={`/audio/${episode.audioFile}`} type="audio/mpeg" />
+                                                        Your browser does not support the audio element.
+                                                    </audio>
+                                                )}
+
+
                                             </div>
                                         </div>
 
@@ -419,6 +560,7 @@ const Dashboard: React.FC = () => {
                         {getStatusText(episode.status)}
                       </span>
 
+
                                             {episode.platforms.length > 0 && (
                                                 <div style={{ display: 'flex', gap: '0.25rem' }}>
                                                     {episode.platforms.map((platform) => (
@@ -438,6 +580,7 @@ const Dashboard: React.FC = () => {
                                                     ))}
                                                 </div>
                                             )}
+
 
                                             <button style={{
                                                 background: 'none',
@@ -472,7 +615,11 @@ const Dashboard: React.FC = () => {
                                 color: '#212529',
                                 margin: 0
                             }}>
+
+                                Manage Episodes
+
                                 All Episodes
+
                             </h2>
                             <button style={{
                                 padding: '0.75rem 1.5rem',
@@ -485,12 +632,130 @@ const Dashboard: React.FC = () => {
                                 fontSize: '0.9rem',
                                 cursor: 'pointer'
                             }}>
+
+                                Upload Episode
+
                                 New Episode
+
                             </button>
                         </div>
 
                         <div style={{
                             backgroundColor: 'white',
+
+                            borderRadius: '12px',
+                            padding: '2rem',
+                            border: '1px solid #E8E8E8',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                        }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {recentEpisodes.map((episode: Episode) => (
+                                    <div
+                                        key={episode.id}
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            padding: '1.5rem',
+                                            backgroundColor: '#FAFAFA',
+                                            borderRadius: '8px',
+                                            border: '1px solid #E8E8E8'
+                                        }}
+                                    >
+                                        <div style={{ flex: 1 }}>
+                                            <h3 style={{
+                                                fontFamily: 'Satoshi, sans-serif',
+                                                fontSize: '1.1rem',
+                                                fontWeight: '600',
+                                                color: '#212529',
+                                                margin: '0 0 0.5rem 0'
+                                            }}>
+                                                {episode.title}
+                                            </h3>
+                                            <p style={{
+                                                fontFamily: 'Satoshi, sans-serif',
+                                                fontSize: '0.9rem',
+                                                color: '#6C757D',
+                                                margin: '0 0 1rem 0'
+                                            }}>
+                                                {episode.description}
+                                            </p>
+
+                                            {episode.status === 'published' && episode.audioFile && (
+                                                <div style={{ marginBottom: '0.5rem' }}>
+                                                    <audio
+                                                        controls
+                                                        style={{
+                                                            width: '100%',
+                                                            maxWidth: '400px',
+                                                            height: '40px'
+                                                        }}
+                                                    >
+                                                        <source src={`/audio/${episode.audioFile}`} type="audio/mpeg" />
+                                                        Your browser does not support the audio element.
+                                                    </audio>
+                                                </div>
+                                            )}
+
+                                            <div style={{
+                                                display: 'flex',
+                                                gap: '1.5rem',
+                                                alignItems: 'center',
+                                                fontSize: '0.85rem',
+                                                color: '#6C757D',
+                                                fontFamily: 'Satoshi, sans-serif'
+                                            }}>
+                                                <span>Duration: {episode.duration}</span>
+                                                <span>{episode.publishDate ? `Published: ${episode.publishDate}` : 'Unpublished'}</span>
+                                            </div>
+                                        </div>
+
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '1rem'
+                                        }}>
+                      <span style={{
+                          padding: '0.5rem 1rem',
+                          borderRadius: '20px',
+                          fontSize: '0.8rem',
+                          fontWeight: '500',
+                          fontFamily: 'Satoshi, sans-serif',
+                          backgroundColor: getStatusColor(episode.status) + '20',
+                          color: getStatusColor(episode.status)
+                      }}>
+                        {getStatusText(episode.status)}
+                      </span>
+
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <button style={{
+                                                    padding: '0.5rem 1rem',
+                                                    backgroundColor: 'white',
+                                                    color: '#495057',
+                                                    border: '1px solid #CED4DA',
+                                                    borderRadius: '6px',
+                                                    fontFamily: 'Satoshi, sans-serif',
+                                                    fontSize: '0.8rem',
+                                                    cursor: 'pointer'
+                                                }}>
+                                                    Edit
+                                                </button>
+                                                <button style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    fontSize: '1.2rem',
+                                                    cursor: 'pointer',
+                                                    padding: '0.5rem',
+                                                    color: '#6C757D'
+                                                }}>
+                                                    ⋯
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
                             borderRadius: '16px',
                             padding: '2rem',
                             border: '1px solid #E5E7EB'
@@ -533,6 +798,7 @@ const Dashboard: React.FC = () => {
                             }}>
                                 Detailed analytics and charts would go here
                             </p>
+
                         </div>
                     </div>
                 )}

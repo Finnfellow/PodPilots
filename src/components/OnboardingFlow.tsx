@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 
 interface FormData {
+
+    podcastName: string;
+    description: string;
+    logo: File | null;
+
     username: string;
     password: string;
     verifyPassword: string;
@@ -10,6 +15,7 @@ interface FormData {
     logo: File | null;
     youtubeConnected: boolean;
     instagramConnected: boolean;
+
 }
 
 interface OnboardingFlowProps {
@@ -18,6 +24,12 @@ interface OnboardingFlowProps {
 
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     const [currentStep, setCurrentStep] = useState(1);
+
+    const [formData, setFormData] = useState<FormData>({
+        podcastName: '',
+        description: '',
+        logo: null,
+
     const [verificationCode, setVerificationCode] = useState('');
     const [isVerified, setIsVerified] = useState(false);
     const correctCode = '123456'; // In real app, this would come from backend
@@ -31,11 +43,16 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         logo: null,
         youtubeConnected: false,
         instagramConnected: false,
+
     });
 
     const updateFormData = (field: keyof FormData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
+
+
+    const nextStep = () => {
+        if (currentStep < 2) {
 
     const handleVerification = () => {
         if (verificationCode === correctCode) {
@@ -56,6 +73,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         }
 
         if (currentStep < 6) {
+
             setCurrentStep(currentStep + 1);
         }
     };
@@ -80,6 +98,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                     <span className="logo-text">PodPilot</span>
                 </div>
             </div>
+
+
+            <h2 className="step-title">Create Your Podcast</h2>
+            <p className="step-subtitle">Set up your podcast details to get started</p>
 
             <h2 className="step-title">Create Your Account</h2>
             <p className="step-subtitle">Let's get started with your basic information</p>
@@ -257,6 +279,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             <h2 className="step-title">Tell Us About Your Podcast</h2>
             <p className="step-subtitle">Let's set up your podcast details</p>
 
+
             <div className="step-indicator">
                 <div className="step-circle active">{currentStep}</div>
             </div>
@@ -286,6 +309,9 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             <div className="navigation-buttons">
                 <button
                     onClick={prevStep}
+
+                    disabled={currentStep === 1}
+
                     className="nav-btn secondary"
                 >
                     Previous
@@ -300,7 +326,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         </div>
     );
 
+
+    const renderStep2 = () => (
+
     const renderStep5 = () => (
+
         <div className="onboarding-card">
             <div className="logo-section">
                 <div className="logo">
@@ -308,8 +338,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 </div>
             </div>
 
+
+            <h2 className="step-title">Add Your Podcast Logo</h2>
+            <p className="step-subtitle">Upload a logo for your podcast (optional)</p>
+
             <h2 className="step-title">Upload Your Podcast Logo</h2>
             <p className="step-subtitle">Add a logo to make your podcast stand out</p>
+
 
             <div className="step-indicator">
                 <div className="step-circle active">{currentStep}</div>
@@ -347,6 +382,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                     Previous
                 </button>
                 <button
+
+                    onClick={handleSubmit}
+                    className="nav-btn primary"
+                >
+                    Create Podcast
+
                     onClick={nextStep}
                     className="nav-btn primary"
                 >
@@ -417,6 +458,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                     className="nav-btn primary"
                 >
                     Finish
+
                 </button>
             </div>
         </div>
@@ -428,6 +470,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 return renderStep1();
             case 2:
                 return renderStep2();
+
             case 3:
                 return renderStep3();
             case 4:
@@ -436,6 +479,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 return renderStep5();
             case 6:
                 return renderStep6();
+
             default:
                 return renderStep1();
         }

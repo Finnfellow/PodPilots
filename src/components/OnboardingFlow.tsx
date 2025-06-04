@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
 
 interface FormData {
-    username: string;
-    password: string;
-    verifyPassword: string;
-    email: string;
     podcastName: string;
     description: string;
     logo: File | null;
-    youtubeConnected: boolean;
-    instagramConnected: boolean;
 }
 
 interface OnboardingFlowProps {
@@ -18,44 +12,18 @@ interface OnboardingFlowProps {
 
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     const [currentStep, setCurrentStep] = useState(1);
-    const [verificationCode, setVerificationCode] = useState('');
-    const [isVerified, setIsVerified] = useState(false);
-    const correctCode = '123456'; // In real app, this would come from backend
     const [formData, setFormData] = useState<FormData>({
-        username: '',
-        password: '',
-        verifyPassword: '',
-        email: '',
         podcastName: '',
         description: '',
         logo: null,
-        youtubeConnected: false,
-        instagramConnected: false,
     });
 
     const updateFormData = (field: keyof FormData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleVerification = () => {
-        if (verificationCode === correctCode) {
-            setIsVerified(true);
-            // Auto advance to next step after successful verification
-            setTimeout(() => {
-                nextStep();
-            }, 500);
-        } else {
-            alert('Incorrect verification code. Please try again.');
-        }
-    };
-
     const nextStep = () => {
-        // For step 3, check if verification is complete
-        if (currentStep === 3 && !isVerified) {
-            return; // Don't allow progression without verification
-        }
-
-        if (currentStep < 6) {
+        if (currentStep < 2) {
             setCurrentStep(currentStep + 1);
         }
     };
@@ -81,181 +49,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 </div>
             </div>
 
-            <h2 className="step-title">Create Your Account</h2>
-            <p className="step-subtitle">Let's get started with your basic information</p>
-
-            <div className="step-indicator">
-                <div className="step-circle active">{currentStep}</div>
-            </div>
-
-            <div className="auth-section">
-                <div className="form-group">
-                    <input
-                        type="text"
-                        placeholder="Username"
-                        value={formData.username}
-                        onChange={(e) => updateFormData('username', e.target.value)}
-                        className="form-input"
-                    />
-                </div>
-
-                <div className="form-group">
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={formData.email}
-                        onChange={(e) => updateFormData('email', e.target.value)}
-                        className="form-input"
-                    />
-                </div>
-            </div>
-
-            <div className="navigation-buttons">
-                <button
-                    onClick={prevStep}
-                    disabled={currentStep === 1}
-                    className="nav-btn secondary"
-                >
-                    Previous
-                </button>
-                <button
-                    onClick={nextStep}
-                    className="nav-btn primary"
-                >
-                    Next
-                </button>
-            </div>
-        </div>
-    );
-
-    const renderStep2 = () => (
-        <div className="onboarding-card">
-            <div className="logo-section">
-                <div className="logo">
-                    <span className="logo-text">PodPilot</span>
-                </div>
-            </div>
-
-            <h2 className="step-title">Secure Your Account</h2>
-            <p className="step-subtitle">Create a strong password to protect your account</p>
-
-            <div className="step-indicator">
-                <div className="step-circle active">{currentStep}</div>
-            </div>
-
-            <div className="auth-section">
-                <div className="form-group">
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={formData.password}
-                        onChange={(e) => updateFormData('password', e.target.value)}
-                        className="form-input"
-                    />
-                </div>
-
-                <div className="form-group">
-                    <input
-                        type="password"
-                        placeholder="Verify Password"
-                        value={formData.verifyPassword}
-                        onChange={(e) => updateFormData('verifyPassword', e.target.value)}
-                        className="form-input"
-                    />
-                </div>
-            </div>
-
-            <div className="navigation-buttons">
-                <button
-                    onClick={prevStep}
-                    className="nav-btn secondary"
-                >
-                    Previous
-                </button>
-                <button
-                    onClick={nextStep}
-                    className="nav-btn primary"
-                >
-                    Next
-                </button>
-            </div>
-        </div>
-    );
-
-    const renderStep3 = () => (
-        <div className="onboarding-card">
-            <div className="logo-section">
-                <div className="logo">
-                    <span className="logo-text">PodPilot</span>
-                </div>
-            </div>
-
-            <h2 className="step-title">Verify Your Email</h2>
-            <p className="step-subtitle">We've sent a verification code to {formData.email}</p>
-
-            <div className="step-indicator">
-                <div className="step-circle active">{currentStep}</div>
-            </div>
-
-            <div className="auth-section">
-                <div className="form-group">
-                    <input
-                        type="text"
-                        placeholder="Verification Code"
-                        value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
-                        className="form-input"
-                    />
-                </div>
-
-                <button type="button" className="secondary-btn">
-                    Resend Code
-                </button>
-
-                <button
-                    type="button"
-                    onClick={handleVerification}
-                    className="primary-btn"
-                    disabled={!verificationCode.trim()}
-                >
-                    Verify
-                </button>
-
-                {isVerified && (
-                    <div className="verification-success">
-                        ✅ Email verified successfully!
-                    </div>
-                )}
-            </div>
-
-            <div className="navigation-buttons">
-                <button
-                    onClick={prevStep}
-                    className="nav-btn secondary"
-                >
-                    Previous
-                </button>
-                <button
-                    onClick={nextStep}
-                    className={`nav-btn primary ${currentStep === 3 && !isVerified ? 'disabled' : ''}`}
-                    disabled={currentStep === 3 && !isVerified}
-                >
-                    Next
-                </button>
-            </div>
-        </div>
-    );
-
-    const renderStep4 = () => (
-        <div className="onboarding-card">
-            <div className="logo-section">
-                <div className="logo">
-                    <span className="logo-text">PodPilot</span>
-                </div>
-            </div>
-
-            <h2 className="step-title">Tell Us About Your Podcast</h2>
-            <p className="step-subtitle">Let's set up your podcast details</p>
+            <h2 className="step-title">Create Your Podcast</h2>
+            <p className="step-subtitle">Set up your podcast details to get started</p>
 
             <div className="step-indicator">
                 <div className="step-circle active">{currentStep}</div>
@@ -286,6 +81,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             <div className="navigation-buttons">
                 <button
                     onClick={prevStep}
+                    disabled={currentStep === 1}
                     className="nav-btn secondary"
                 >
                     Previous
@@ -300,7 +96,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         </div>
     );
 
-    const renderStep5 = () => (
+    const renderStep2 = () => (
         <div className="onboarding-card">
             <div className="logo-section">
                 <div className="logo">
@@ -308,8 +104,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 </div>
             </div>
 
-            <h2 className="step-title">Upload Your Podcast Logo</h2>
-            <p className="step-subtitle">Add a logo to make your podcast stand out</p>
+            <h2 className="step-title">Add Your Podcast Logo</h2>
+            <p className="step-subtitle">Upload a logo for your podcast (optional)</p>
 
             <div className="step-indicator">
                 <div className="step-circle active">{currentStep}</div>
@@ -347,76 +143,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                     Previous
                 </button>
                 <button
-                    onClick={nextStep}
-                    className="nav-btn primary"
-                >
-                    Next
-                </button>
-            </div>
-        </div>
-    );
-
-    const renderStep6 = () => (
-        <div className="onboarding-card">
-            <div className="logo-section">
-                <div className="logo">
-                    <span className="logo-text">PodPilot</span>
-                </div>
-            </div>
-
-            <h2 className="step-title">Connect Your Platforms</h2>
-            <p className="step-subtitle">Link your social media accounts for easy publishing</p>
-
-            <div className="step-indicator">
-                <div className="step-circle active">{currentStep}</div>
-            </div>
-
-            <div className="podcast-setup">
-                <div className="social-connections">
-                    <div className="connection-item">
-                        <div>
-                            <span>📺 YouTube</span>
-                            <p className="connection-desc">Publish audio with generated visuals</p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => updateFormData('youtubeConnected', !formData.youtubeConnected)}
-                            className={`connection-btn ${formData.youtubeConnected ? 'connected' : ''}`}
-                        >
-                            {formData.youtubeConnected ? '✓ Connected' : 'Connect'}
-                        </button>
-                    </div>
-
-                    <div className="connection-item">
-                        <div>
-                            <span>📸 Instagram</span>
-                            <p className="connection-desc">Share podcast clips as Reels</p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => updateFormData('instagramConnected', !formData.instagramConnected)}
-                            className={`connection-btn ${formData.instagramConnected ? 'connected' : ''}`}
-                        >
-                            {formData.instagramConnected ? '✓ Connected' : 'Connect'}
-                        </button>
-                    </div>
-                </div>
-
-                <p className="skip-text">You can connect these later in your dashboard</p>
-            </div>
-
-            <div className="navigation-buttons">
-                <button
-                    onClick={prevStep}
-                    className="nav-btn secondary"
-                >
-                    Previous
-                </button>
-                <button
                     onClick={handleSubmit}
                     className="nav-btn primary"
                 >
-                    Finish
+                    Create Podcast
                 </button>
             </div>
         </div>
@@ -428,14 +158,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 return renderStep1();
             case 2:
                 return renderStep2();
-            case 3:
-                return renderStep3();
-            case 4:
-                return renderStep4();
-            case 5:
-                return renderStep5();
-            case 6:
-                return renderStep6();
             default:
                 return renderStep1();
         }

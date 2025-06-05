@@ -1,0 +1,8 @@
+.me-auto{
+    margin-right: 0 !important;
+    margin-left: auto !important;
+}
+
+.overlay{
+    background-color: hsla(0, 0%, 100%, 0.47);
+}

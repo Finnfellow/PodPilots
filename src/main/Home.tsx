@@ -13,7 +13,7 @@ function Home() {
                     <a className="navbar-brand" href="#">
                         <img
                             className="img-fluid"
-                            src="resources/Drawable/PodPilot-Logo-web.png"
+                            src="/Drawable/PodPilot-Logo-web.png"
                             alt="PodPilot Logo"
                         />
                     </a>
@@ -65,9 +65,9 @@ function Home() {
 
             {/* Banner Section */}
             <div className="banner">
-                <img className="opacity-25 img-fluid" src="resources/Drawable/banner.jpg" alt="Main Banner" />
+                <img className="opacity-25 img-fluid" src="/Drawable/banner.jpg" alt="Main Banner" />
                 <div className="slogan">
-                    <img className="img-fluid" src="resources/Drawable/PodPilot-Wordmark_black_banner.png" alt="PodPilot Slogan" />
+                    <img className="img-fluid" src="/Drawable/PodPilot-Wordmark_black_banner.png" alt="PodPilot Slogan" />
                     <h3>Discover True Podcasting Freedom</h3>
                 </div>
             </div>
@@ -78,9 +78,9 @@ function Home() {
                     Post your content seamlessly anywhere through one place <strong>PodPilot!</strong>
                 </p>
                 <div className="row">
-                    <div className="col-4"><img src="resources/Drawable/instagram.jpg" alt="Instagram" className="img-fluid" /></div>
-                    <div className="col-4"><img src="resources/Drawable/tiktok.jpg" alt="TikTok" className="img-fluid" /></div>
-                    <div className="col-4"><img src="resources/Drawable/youtube.jpg" alt="YouTube" className="img-fluid" /></div>
+                    <div className="col-4"><img src="/Drawable/instagram.jpg" alt="Instagram" className="img-fluid" /></div>
+                    <div className="col-4"><img src="/Drawable/tiktok.jpg" alt="TikTok" className="img-fluid" /></div>
+                    <div className="col-4"><img src="/Drawable/youtube.jpg" alt="YouTube" className="img-fluid" /></div>
                 </div>
             </div>
 

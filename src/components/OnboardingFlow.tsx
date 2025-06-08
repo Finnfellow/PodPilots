@@ -7,6 +7,7 @@ interface FormData {
     email: string;
     podcastName: string;
     description: string;
+    tags: string[];
     logo: File | null;
     youtubeConnected: boolean;
     instagramConnected: boolean;
@@ -20,6 +21,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [verificationCode, setVerificationCode] = useState('');
     const [isVerified, setIsVerified] = useState(false);
+    const [tagInput, setTagInput] = useState('');
     const correctCode = '123456'; // In real app, this would come from backend
 
     const [formData, setFormData] = useState<FormData>({
@@ -29,6 +31,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         email: '',
         podcastName: '',
         description: '',
+        tags: [],
         logo: null,
         youtubeConnected: false,
         instagramConnected: false,
@@ -67,8 +70,30 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         }
     };
 
+    const addTag = () => {
+        if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+            updateFormData('tags', [...formData.tags, tagInput.trim()]);
+            setTagInput('');
+        }
+    };
+
+    const removeTag = (tagToRemove: string) => {
+        updateFormData('tags', formData.tags.filter(tag => tag !== tagToRemove));
+    };
+
     const handleSubmit = () => {
+        // Store podcast metadata in localStorage for demo purposes
+        const podcastMetadata = {
+            name: formData.podcastName,
+            description: formData.description,
+            tags: formData.tags,
+            logo: formData.logo?.name || null,
+            createdAt: new Date().toISOString()
+        };
+
+        localStorage.setItem('podcastMetadata', JSON.stringify(podcastMetadata));
         console.log('Onboarding complete:', formData);
+
         if (onComplete) {
             onComplete();
         }
@@ -270,6 +295,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                         value={formData.podcastName}
                         onChange={(e) => updateFormData('podcastName', e.target.value)}
                         className="form-input"
+                        required
                     />
                 </div>
 
@@ -280,7 +306,51 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                         onChange={(e) => updateFormData('description', e.target.value)}
                         className="form-textarea"
                         rows={4}
+                        required
                     />
+                </div>
+
+                <div className="form-group">
+                    <div className="tag-input-container">
+                        <input
+                            type="text"
+                            placeholder="Add tags (press Enter or click Add)"
+                            value={tagInput}
+                            onChange={(e) => setTagInput(e.target.value)}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    addTag();
+                                }
+                            }}
+                            className="form-input"
+                        />
+                        <button
+                            type="button"
+                            onClick={addTag}
+                            className="add-tag-btn"
+                            disabled={!tagInput.trim()}
+                        >
+                            Add Tag
+                        </button>
+                    </div>
+
+                    {formData.tags.length > 0 && (
+                        <div className="tags-container">
+                            {formData.tags.map((tag, index) => (
+                                <span key={index} className="tag">
+                                    {tag}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeTag(tag)}
+                                        className="remove-tag"
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -895,6 +965,84 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         .nav-btn.disabled {
           opacity: 0.4;
           cursor: not-allowed;
+        }
+
+        .tag-input-container {
+          display: flex;
+          gap: 0.5rem;
+          align-items: flex-end;
+        }
+
+        .tag-input-container .form-input {
+          flex: 1;
+        }
+
+        .add-tag-btn {
+          padding: 1rem 1.5rem;
+          background: #4285F4;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-family: 'Satoshi', sans-serif;
+          font-weight: 500;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        }
+
+        .add-tag-btn:hover:not(:disabled) {
+          background: #3367D6;
+        }
+
+        .add-tag-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .tags-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-top: 1rem;
+          padding: 1rem;
+          background: #FAFAFA;
+          border-radius: 8px;
+          border: 1px solid #E8E8E8;
+        }
+
+        .tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 0.75rem;
+          background: #4285F4;
+          color: white;
+          border-radius: 20px;
+          font-family: 'Satoshi', sans-serif;
+          font-size: 0.8rem;
+          font-weight: 500;
+        }
+
+        .remove-tag {
+          background: none;
+          border: none;
+          color: white;
+          cursor: pointer;
+          font-size: 1.2rem;
+          line-height: 1;
+          padding: 0;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 0.2s ease;
+        }
+
+        .remove-tag:hover {
+          background: rgba(255, 255, 255, 0.2);
         }
       `}</style>
         </>

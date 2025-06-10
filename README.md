@@ -1,54 +1,40 @@
-# React + TypeScript + Vite
+# PodPilot
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PodPilot is a streamlined podcast publishing and analytics dashboard designed to make managing, monetizing, and distributing podcast episodes as simple and centralized as possible.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Create and manage multiple podcasts under one account
+- Upload new episodes with optional artwork, transcripts, and tags
+- Schedule or publish episodes instantly across RSS, YouTube, Instagram, etc.
+- Integrated analytics (plays, engagement, platform split, boost amounts)
+- Episode comments and reply tools (with cross-platform posting support)
+- Value-for-Value boost support and monetization tools
+- Clean, professional UI inspired by modern SaaS platforms (like Shopify)
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Frontend**: React + TypeScript, Vite, Bootstrap
+- **Backend**: Java + Kotlin (Spring Boot)
+- **Auth**: Auth0
+- **Podcast Distribution**: RSS
+- **Other APIs**: TBD as features expand (YouTube, Instagram, analytics providers)
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## License
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+This project is covered under a **Proprietary Commercial License**. All rights reserved. Users are granted a limited right to use PodPilot under the terms outlined in the End-User License Agreement (EULA), which restricts modification, redistribution, or reverse engineering of the software.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Some third-party open-source libraries (e.g. React, Bootstrap) are used in accordance with their permissive MIT licenses. These components are acknowledged and their licenses retained where required.
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+API services (e.g. Auth0, YouTube, etc.) are used in compliance with their respective Terms of Service and branding/usage guidelines. Users of PodPilot are subject to both our EULA and the individual terms of any integrated services.
+
+## Contributors
+
+- Austin Miller
+- Luis Moya
+- Tim Webb
+
+## Project Status
+
+Alpha – Core functionality is under active development. Stable features include podcast creation, episode upload, and RSS distribution. Additional podcasting 2.0 and monetization features are being built.
+

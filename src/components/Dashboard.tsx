@@ -18,7 +18,11 @@ interface PodcastStats {
     rssUrl: string;
 }
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+    onNavigateToUpload?: () => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'episodes'>('overview');
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [podcastMetadata, setPodcastMetadata] = useState<PodcastMetadata | null>(null);
@@ -289,18 +293,21 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <button style={{
-                            padding: '0.75rem 1.5rem',
-                            backgroundColor: '#000000',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            fontFamily: 'Satoshi, sans-serif',
-                            fontWeight: '600',
-                            fontSize: '0.9rem',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                        }}>
+                        <button
+                            onClick={onNavigateToUpload}
+                            style={{
+                                padding: '0.75rem 1.5rem',
+                                backgroundColor: '#000000',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontFamily: 'Satoshi, sans-serif',
+                                fontWeight: '600',
+                                fontSize: '0.9rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
                             Upload Episode
                         </button>
 
@@ -867,17 +874,20 @@ const Dashboard: React.FC = () => {
                             }}>
                                 Manage Episodes
                             </h2>
-                            <button style={{
-                                padding: '0.75rem 1.5rem',
-                                backgroundColor: '#000000',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                fontFamily: 'Satoshi, sans-serif',
-                                fontWeight: '600',
-                                fontSize: '0.9rem',
-                                cursor: 'pointer'
-                            }}>
+                            <button
+                                onClick={onNavigateToUpload}
+                                style={{
+                                    padding: '0.75rem 1.5rem',
+                                    backgroundColor: '#000000',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    fontFamily: 'Satoshi, sans-serif',
+                                    fontWeight: '600',
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
                                 Upload Episode
                             </button>
                         </div>

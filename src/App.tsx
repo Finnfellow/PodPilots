@@ -1,24 +1,92 @@
-
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import OnboardingFlow from './components/OnboardingFlow';
 import Dashboard from './components/Dashboard';
+import { userService, type UserProfile } from './utils/cloudStorage';
 import './App.css';
 
 function App() {
-    const [showOnboarding, setShowOnboarding] = useState(true);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [currentView, setCurrentView] = useState<'onboarding' | 'dashboard' | 'loading'>('loading');
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-    // Handle onboarding completion
+    useEffect(() => {
+        // Check if user has completed onboarding
+        const profile = userService.getUserProfile();
+        const podcastMetadata = userService.getPodcastMetadata();
+
+        if (profile && podcastMetadata) {
+            setUserProfile(profile);
+            setCurrentView('dashboard');
+        } else {
+            setCurrentView('onboarding');
+        }
+    }, []);
+
     const handleOnboardingComplete = () => {
-        setShowOnboarding(false);
-        setIsAuthenticated(true);
+        const profile = userService.getUserProfile();
+        setUserProfile(profile);
+        setCurrentView('dashboard');
     };
 
-    if (showOnboarding) {
+    if (currentView === 'loading') {
+        return (
+            <div style={{
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#FFFFFF',
+                fontFamily: 'Satoshi, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+            }}>
+                <div style={{
+                    textAlign: 'center'
+                }}>
+                    <div style={{
+                        fontSize: '3rem',
+                        marginBottom: '1rem',
+                        animation: 'bounce 1s infinite'
+                    }}>
+                        🎙️
+                    </div>
+                    <h2 style={{
+                        fontFamily: 'Recoleta, serif',
+                        fontSize: '2rem',
+                        fontWeight: 'bold',
+                        color: '#212529',
+                        margin: '0 0 0.5rem 0'
+                    }}>
+                        PodPilot
+                    </h2>
+                    <p style={{
+                        color: '#6C757D',
+                        margin: 0,
+                        fontSize: '1rem'
+                    }}>
+                        Preparing for takeoff...
+                    </p>
+                </div>
+
+                <style>{`
+                    @keyframes bounce {
+                        0%, 20%, 50%, 80%, 100% {
+                            transform: translateY(0);
+                        }
+                        40% {
+                            transform: translateY(-10px);
+                        }
+                        60% {
+                            transform: translateY(-5px);
+                        }
+                    }
+                `}</style>
+            </div>
+        );
+    }
+
+    if (currentView === 'onboarding') {
         return <OnboardingFlow onComplete={handleOnboardingComplete} />;
     }
 
-    if (isAuthenticated) {
+    if (currentView === 'dashboard') {
         return <Dashboard />;
     }
 
@@ -30,61 +98,3 @@ function App() {
 }
 
 export default App;
-
-import {useAuth0} from "@auth0/auth0-react";
-import TempLoginClass from "./main/TempLoginClass.tsx";
-import {useEffect,useState} from "react";
-import OnboardingFlow from "./components/OnboardingFlow.tsx";
-function App() {
-    const { isAuthenticated, isLoading } = useAuth0();
-    const path = window.location.pathname;
-    const [showToast, setShowToast] = useState(false);
-
-    useEffect(() => {
-        if (isAuthenticated && path === '/onboarding') {
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000); // Hide toast after 3s
-        }
-    }, [isAuthenticated, path]);
-
-    if (isLoading) return <div>Loading...</div>;
-
-    return (
-        <>
-            <style>{toastAnimation}</style>
-            {showToast && <div style={toastStyle}>✅ Login successful!</div>}
-
-            {path === '/onboarding' ? <OnboardingFlow /> : <TempLoginClass />}
-        </>
-    );
-}
-
-export default App;
-
-
-
-const toastStyle: React.CSSProperties = {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    backgroundColor: '#4caf50',
-    color: 'white',
-    padding: '1rem 2rem',
-    borderRadius: '8px',
-    boxShadow: '0 0 10px rgba(0,0,0,0.2)',
-    zIndex: 9999,
-    fontSize: '1.2rem',
-    opacity: 0,
-    animation: 'fadeInOut 3s ease-in-out forwards',
-};
-
-const toastAnimation = `
-@keyframes fadeInOut {
-  0% { opacity: 0; transform: translate(-50%, -60%); }
-  10% { opacity: 1; transform: translate(-50%, -50%); }
-  90% { opacity: 1; transform: translate(-50%, -50%); }
-  100% { opacity: 0; transform: translate(-50%, -40%); }
-}
-`;
-

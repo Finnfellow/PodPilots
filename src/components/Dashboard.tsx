@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import ImageUpload from './ImageUpload';
+import { userService, type UserProfile, type PodcastMetadata } from '../utils/cloudStorage';
 
 interface Episode {
     id: string;
@@ -16,19 +18,12 @@ interface PodcastStats {
     rssUrl: string;
 }
 
-interface PodcastMetadata {
-    name: string;
-    description: string;
-    tags: string[];
-    logo: string | null;
-    createdAt: string;
-    updatedAt?: string;
-}
-
 const Dashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'overview' | 'episodes'>('overview');
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [podcastMetadata, setPodcastMetadata] = useState<PodcastMetadata | null>(null);
     const [isEditingMetadata, setIsEditingMetadata] = useState(false);
+    const [showWelcome, setShowWelcome] = useState(false);
     const [editForm, setEditForm] = useState({
         name: '',
         description: '',
@@ -36,7 +31,7 @@ const Dashboard: React.FC = () => {
     });
     const [tagInput, setTagInput] = useState('');
 
-    // Define recentEpisodes first
+    // Define recentEpisodes
     const [recentEpisodes] = useState<Episode[]>([
         {
             id: '1',
@@ -66,17 +61,29 @@ const Dashboard: React.FC = () => {
         }
     ]);
 
-    // Load podcast metadata on component mount
+    // Load data on component mount
     useEffect(() => {
-        const storedMetadata = localStorage.getItem('podcastMetadata');
-        if (storedMetadata) {
-            const metadata = JSON.parse(storedMetadata);
-            setPodcastMetadata(metadata);
+        const profile = userService.getUserProfile();
+        const metadata = userService.getPodcastMetadata();
+
+        setUserProfile(profile);
+        setPodcastMetadata(metadata);
+
+        if (metadata) {
             setEditForm({
                 name: metadata.name,
                 description: metadata.description,
                 tags: metadata.tags
             });
+        }
+
+        // Check if this is a fresh login (show welcome)
+        const justCompletedOnboarding = localStorage.getItem('justCompletedOnboarding');
+        if (justCompletedOnboarding === 'true') {
+            setShowWelcome(true);
+            localStorage.removeItem('justCompletedOnboarding');
+            // Auto-hide welcome after 5 seconds
+            setTimeout(() => setShowWelcome(false), 5000);
         }
     }, []);
 
@@ -87,6 +94,28 @@ const Dashboard: React.FC = () => {
             total + (episode.status === 'published' ? Math.floor(Math.random() * 100) + 10 : 0), 0
         ),
         rssUrl: `https://podpilot.com/feeds/${podcastMetadata?.name?.toLowerCase().replace(/\s+/g, '-') || 'your-podcast'}.xml`
+    };
+
+    const handleAvatarUpload = async (file: File, _previewUrl: string) => {
+        try {
+            await userService.uploadUserAvatar(file);
+            const updatedProfile = userService.getUserProfile();
+            setUserProfile(updatedProfile);
+        } catch (error) {
+            console.error('Avatar upload failed:', error);
+            throw error;
+        }
+    };
+
+    const handleLogoUpload = async (file: File, _previewUrl: string) => {
+        try {
+            await userService.uploadPodcastLogo(file);
+            const updatedMetadata = userService.getPodcastMetadata();
+            setPodcastMetadata(updatedMetadata);
+        } catch (error) {
+            console.error('Logo upload failed:', error);
+            throw error;
+        }
     };
 
     const updateMetadata = (field: keyof typeof editForm, value: any) => {
@@ -109,7 +138,8 @@ const Dashboard: React.FC = () => {
             name: editForm.name,
             description: editForm.description,
             tags: editForm.tags,
-            logo: podcastMetadata?.logo || null,
+            logoUrl: podcastMetadata?.logoUrl || undefined,
+            logoPublicId: podcastMetadata?.logoPublicId || undefined,
             createdAt: podcastMetadata?.createdAt || new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
@@ -146,12 +176,61 @@ const Dashboard: React.FC = () => {
         }
     };
 
+    const getInitials = (name: string) => {
+        return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
+    };
+
     return (
         <div style={{
             minHeight: '100vh',
             backgroundColor: '#FFFFFF',
             fontFamily: 'Satoshi, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
+            {/* Welcome Toast */}
+            {showWelcome && (
+                <div style={{
+                    position: 'fixed',
+                    top: '2rem',
+                    right: '2rem',
+                    backgroundColor: '#1A8C67',
+                    color: 'white',
+                    padding: '1rem 1.5rem',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                    zIndex: 1000,
+                    animation: 'slideInRight 0.5s ease-out',
+                    fontFamily: 'Satoshi, sans-serif',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                }}>
+                    <span style={{ fontSize: '1.25rem' }}>🎉</span>
+                    <div>
+                        <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                            Welcome to PodPilot, {userProfile?.username || 'Creator'}!
+                        </div>
+                        <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
+                            Your podcast is ready for takeoff
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setShowWelcome(false)}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '1.25rem',
+                            padding: '0.25rem',
+                            marginLeft: '0.5rem'
+                        }}
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+
             {/* Header */}
             <header style={{
                 backgroundColor: 'white',
@@ -225,19 +304,26 @@ const Dashboard: React.FC = () => {
                             Upload Episode
                         </button>
 
+                        {/* User Avatar */}
                         <div style={{
                             width: '2.5rem',
                             height: '2.5rem',
                             borderRadius: '50%',
-                            backgroundColor: '#000000',
+                            backgroundColor: userProfile?.avatarUrl ? 'transparent' : '#000000',
+                            backgroundImage: userProfile?.avatarUrl ? `url(${userProfile.avatarUrl})` : 'none',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: 'white',
                             fontWeight: '600',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            fontSize: '0.875rem'
                         }}>
-                            U
+                            {!userProfile?.avatarUrl && (
+                                userProfile?.username ? getInitials(userProfile.username) : 'U'
+                            )}
                         </div>
                     </div>
                 </div>
@@ -266,15 +352,24 @@ const Dashboard: React.FC = () => {
                                 alignItems: 'flex-start',
                                 marginBottom: '1rem'
                             }}>
-                                <h2 style={{
-                                    fontFamily: 'Satoshi, sans-serif',
-                                    fontSize: '1.5rem',
-                                    fontWeight: '600',
-                                    color: '#212529',
-                                    margin: 0
-                                }}>
-                                    Welcome back! 👋
-                                </h2>
+                                <div>
+                                    <h2 style={{
+                                        fontFamily: 'Satoshi, sans-serif',
+                                        fontSize: '1.5rem',
+                                        fontWeight: '600',
+                                        color: '#212529',
+                                        margin: '0 0 0.5rem 0'
+                                    }}>
+                                        Welcome back, {userProfile?.username || 'Creator'}! 👋
+                                    </h2>
+                                    <p style={{
+                                        color: '#6C757D',
+                                        margin: 0,
+                                        fontFamily: 'Satoshi, sans-serif'
+                                    }}>
+                                        {podcastMetadata?.description || 'Upload episodes, manage your RSS feed, and let listeners discover your content.'}
+                                    </p>
+                                </div>
                                 <button
                                     onClick={() => setIsEditingMetadata(true)}
                                     style={{
@@ -293,8 +388,52 @@ const Dashboard: React.FC = () => {
                                 </button>
                             </div>
 
+                            {/* Profile and Podcast Images */}
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                                gap: '2rem',
+                                marginTop: '2rem'
+                            }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <h3 style={{
+                                        fontFamily: 'Satoshi, sans-serif',
+                                        fontSize: '1rem',
+                                        fontWeight: '500',
+                                        color: '#495057',
+                                        marginBottom: '1rem'
+                                    }}>
+                                        Your Profile
+                                    </h3>
+                                    <ImageUpload
+                                        currentImage={userProfile?.avatarUrl}
+                                        onImageUpload={handleAvatarUpload}
+                                        type="avatar"
+                                        size="md"
+                                    />
+                                </div>
+
+                                <div style={{ textAlign: 'center' }}>
+                                    <h3 style={{
+                                        fontFamily: 'Satoshi, sans-serif',
+                                        fontSize: '1rem',
+                                        fontWeight: '500',
+                                        color: '#495057',
+                                        marginBottom: '1rem'
+                                    }}>
+                                        Podcast Logo
+                                    </h3>
+                                    <ImageUpload
+                                        currentImage={podcastMetadata?.logoUrl}
+                                        onImageUpload={handleLogoUpload}
+                                        type="podcast"
+                                        size="md"
+                                    />
+                                </div>
+                            </div>
+
                             {isEditingMetadata ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '2rem' }}>
                                     <input
                                         type="text"
                                         placeholder="Podcast Name"
@@ -431,14 +570,6 @@ const Dashboard: React.FC = () => {
                                 </div>
                             ) : (
                                 <>
-                                    <p style={{
-                                        color: '#6C757D',
-                                        margin: '0 0 1rem 0',
-                                        fontFamily: 'Satoshi, sans-serif'
-                                    }}>
-                                        {podcastMetadata?.description || 'Upload episodes, manage your RSS feed, and let listeners discover your content.'}
-                                    </p>
-
                                     {podcastMetadata?.tags && podcastMetadata.tags.length > 0 && (
                                         <div style={{
                                             display: 'flex',
@@ -869,6 +1000,19 @@ const Dashboard: React.FC = () => {
                     </div>
                 )}
             </main>
+
+            <style>{`
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+            `}</style>
         </div>
     );
 };

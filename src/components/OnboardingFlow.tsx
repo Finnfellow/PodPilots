@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { userService } from '../utils/cloudStorage';
 
 interface FormData {
     username: string;
@@ -81,21 +82,38 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         updateFormData('tags', formData.tags.filter(tag => tag !== tagToRemove));
     };
 
-    const handleSubmit = () => {
-        // Store podcast metadata in localStorage for demo purposes
-        const podcastMetadata = {
-            name: formData.podcastName,
-            description: formData.description,
-            tags: formData.tags,
-            logo: formData.logo?.name || null,
-            createdAt: new Date().toISOString()
-        };
+    const handleSubmit = async () => {
+        try {
+            // Create user profile
+            const userProfile = await userService.createUserProfile(formData.username, formData.email);
 
-        localStorage.setItem('podcastMetadata', JSON.stringify(podcastMetadata));
-        console.log('Onboarding complete:', formData);
+            // Store podcast metadata
+            const podcastMetadata = {
+                name: formData.podcastName,
+                description: formData.description,
+                tags: formData.tags,
+                logoUrl: undefined,
+                logoPublicId: undefined,
+                createdAt: new Date().toISOString()
+            };
 
-        if (onComplete) {
-            onComplete();
+            localStorage.setItem('podcastMetadata', JSON.stringify(podcastMetadata));
+
+            // Set flag for welcome message
+            localStorage.setItem('justCompletedOnboarding', 'true');
+
+            console.log('Onboarding complete:', {
+                userProfile,
+                podcastMetadata,
+                formData
+            });
+
+            if (onComplete) {
+                onComplete();
+            }
+        } catch (error) {
+            console.error('Error completing onboarding:', error);
+            alert('There was an error completing your setup. Please try again.');
         }
     };
 
@@ -122,6 +140,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                         value={formData.username}
                         onChange={(e) => updateFormData('username', e.target.value)}
                         className="form-input"
+                        required
                     />
                 </div>
 
@@ -132,6 +151,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                         value={formData.email}
                         onChange={(e) => updateFormData('email', e.target.value)}
                         className="form-input"
+                        required
                     />
                 </div>
             </div>
@@ -146,6 +166,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 </button>
                 <button
                     onClick={nextStep}
+                    disabled={!formData.username.trim() || !formData.email.trim()}
                     className="nav-btn primary"
                 >
                     Next
@@ -177,6 +198,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                         value={formData.password}
                         onChange={(e) => updateFormData('password', e.target.value)}
                         className="form-input"
+                        required
+                        minLength={8}
                     />
                 </div>
 
@@ -187,8 +210,20 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                         value={formData.verifyPassword}
                         onChange={(e) => updateFormData('verifyPassword', e.target.value)}
                         className="form-input"
+                        required
                     />
                 </div>
+
+                {formData.password && formData.verifyPassword && formData.password !== formData.verifyPassword && (
+                    <div style={{
+                        color: '#DC3545',
+                        fontSize: '0.875rem',
+                        fontFamily: 'Satoshi, sans-serif',
+                        marginTop: '0.5rem'
+                    }}>
+                        Passwords do not match
+                    </div>
+                )}
             </div>
 
             <div className="navigation-buttons">
@@ -200,6 +235,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 </button>
                 <button
                     onClick={nextStep}
+                    disabled={!formData.password || !formData.verifyPassword || formData.password !== formData.verifyPassword}
                     className="nav-btn primary"
                 >
                     Next
@@ -227,10 +263,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 <div className="form-group">
                     <input
                         type="text"
-                        placeholder="Verification Code"
+                        placeholder="Verification Code (use: 123456)"
                         value={verificationCode}
                         onChange={(e) => setVerificationCode(e.target.value)}
                         className="form-input"
+                        maxLength={6}
                     />
                 </div>
 
@@ -363,6 +400,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 </button>
                 <button
                     onClick={nextStep}
+                    disabled={!formData.podcastName.trim() || !formData.description.trim()}
                     className="nav-btn primary"
                 >
                     Next
@@ -380,7 +418,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             </div>
 
             <h2 className="step-title">Upload Your Podcast Logo</h2>
-            <p className="step-subtitle">Add a logo to make your podcast stand out</p>
+            <p className="step-subtitle">Add a logo to make your podcast stand out (optional)</p>
 
             <div className="step-indicator">
                 <div className="step-circle active">{currentStep}</div>
@@ -408,6 +446,21 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                         <p>✅ Logo uploaded: {formData.logo.name}</p>
                     </div>
                 )}
+
+                <div style={{
+                    textAlign: 'center',
+                    fontSize: '0.875rem',
+                    color: '#6C757D',
+                    fontFamily: 'Satoshi, sans-serif',
+                    marginTop: '1rem'
+                }}>
+                    <p style={{ margin: '0 0 0.5rem 0' }}>
+                        You can upload your logo now or add it later in your dashboard
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.75rem' }}>
+                        Recommended size: 1400x1400px, Max: 5MB
+                    </p>
+                </div>
             </div>
 
             <div className="navigation-buttons">
@@ -436,7 +489,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             </div>
 
             <h2 className="step-title">Connect Your Platforms</h2>
-            <p className="step-subtitle">Link your social media accounts for easy publishing</p>
+            <p className="step-subtitle">Link your social media accounts for easy publishing (optional)</p>
 
             <div className="step-indicator">
                 <div className="step-circle active">{currentStep}</div>
@@ -474,6 +527,37 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 </div>
 
                 <p className="skip-text">You can connect these later in your dashboard</p>
+
+                <div style={{
+                    backgroundColor: '#F8F9FF',
+                    border: '1px solid #4285F4',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    marginTop: '1.5rem',
+                    textAlign: 'center'
+                }}>
+                    <div style={{
+                        fontSize: '1.25rem',
+                        marginBottom: '0.5rem'
+                    }}>🚀</div>
+                    <h3 style={{
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: '#212529',
+                        margin: '0 0 0.5rem 0',
+                        fontFamily: 'Satoshi, sans-serif'
+                    }}>
+                        Ready for Takeoff!
+                    </h3>
+                    <p style={{
+                        fontSize: '0.875rem',
+                        color: '#6C757D',
+                        margin: 0,
+                        fontFamily: 'Satoshi, sans-serif'
+                    }}>
+                        Your podcast setup is complete. Let's launch your dashboard!
+                    </p>
+                </div>
             </div>
 
             <div className="navigation-buttons">
@@ -486,8 +570,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 <button
                     onClick={handleSubmit}
                     className="nav-btn primary"
+                    style={{
+                        background: 'linear-gradient(135deg, #4285F4 0%, #1A73E8 100%)',
+                        fontWeight: '600'
+                    }}
                 >
-                    Finish
+                    Launch Dashboard 🚀
                 </button>
             </div>
         </div>
@@ -936,7 +1024,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           border: none;
         }
 
-        .nav-btn.primary:hover {
+        .nav-btn.primary:hover:not(:disabled) {
           background: #333333;
           transform: translateY(-1px);
         }
@@ -947,7 +1035,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           border: 1.5px solid #CED4DA;
         }
 
-        .nav-btn.secondary:hover {
+        .nav-btn.secondary:hover:not(:disabled) {
           background: #F8F9FA;
           border-color: #ADB5BD;
         }

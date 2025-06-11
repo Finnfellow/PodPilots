@@ -1,6 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import ImageUpload from './ImageUpload';
 import { userService, type UserProfile, type PodcastMetadata } from '../utils/cloudStorage';
+
+import { useState } from 'react';
+
 
 interface Episode {
     id: string;
@@ -20,6 +24,7 @@ interface PodcastStats {
 
 const Dashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'overview' | 'episodes'>('overview');
+
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [podcastMetadata, setPodcastMetadata] = useState<PodcastMetadata | null>(null);
     const [isEditingMetadata, setIsEditingMetadata] = useState(false);
@@ -28,6 +33,14 @@ const Dashboard: React.FC = () => {
         name: '',
         description: '',
         tags: [] as string[]
+
+
+    // Mock data - replace with real data from your backend
+    const [stats] = useState<PodcastStats>({
+        totalEpisodes: 5,
+        totalPlays: 247,
+        rssUrl: 'https://podpilot.com/feeds/your-podcast.xml'
+
     });
     const [tagInput, setTagInput] = useState('');
 
@@ -58,6 +71,7 @@ const Dashboard: React.FC = () => {
             publishDate: '',
             duration: '0:00',
             status: 'draft'
+
         }
     ]);
 
@@ -75,6 +89,7 @@ const Dashboard: React.FC = () => {
                 description: metadata.description,
                 tags: metadata.tags
             });
+
         }
 
         // Check if this is a fresh login (show welcome)
@@ -395,6 +410,7 @@ const Dashboard: React.FC = () => {
                                 gap: '2rem',
                                 marginTop: '2rem'
                             }}>
+
                                 <div style={{ textAlign: 'center' }}>
                                     <h3 style={{
                                         fontFamily: 'Satoshi, sans-serif',
@@ -607,6 +623,10 @@ const Dashboard: React.FC = () => {
                                     )}
                                 </>
                             )}
+
+                                Upload episodes, manage your RSS feed, and let listeners discover your content.
+                            </p>
+
                         </div>
 
                         {/* Stats Grid */}
@@ -785,11 +805,21 @@ const Dashboard: React.FC = () => {
                                                 gap: '1rem',
                                                 alignItems: 'center'
                                             }}>
+
+                        <span style={{
+                            fontSize: '0.8rem',
+                            color: '#6C757D',
+                            fontFamily: 'Satoshi, sans-serif'
+                        }}>
+                          {episode.publishDate || 'Not published'}
+                        </span>
+
                                                 <span style={{
                                                     fontSize: '0.8rem',
                                                     color: '#6C757D',
                                                     fontFamily: 'Satoshi, sans-serif'
                                                 }}>
+
                                                     {episode.publishDate || 'Not published'}
                                                 </span>
                                                 <span style={{
@@ -799,6 +829,10 @@ const Dashboard: React.FC = () => {
                                                 }}>
                                                     {episode.duration}
                                                 </span>
+
+                          {episode.duration}
+                        </span>
+
                                                 {episode.status === 'published' && episode.audioFile && (
                                                     <audio
                                                         controls
@@ -820,6 +854,7 @@ const Dashboard: React.FC = () => {
                                             alignItems: 'flex-end',
                                             gap: '0.5rem'
                                         }}>
+
                                             <span style={{
                                                 padding: '0.25rem 0.75rem',
                                                 borderRadius: '20px',
@@ -831,6 +866,19 @@ const Dashboard: React.FC = () => {
                                             }}>
                                                 {getStatusText(episode.status)}
                                             </span>
+
+                      <span style={{
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '20px',
+                          fontSize: '0.75rem',
+                          fontWeight: '500',
+                          fontFamily: 'Satoshi, sans-serif',
+                          backgroundColor: getStatusColor(episode.status) + '20',
+                          color: getStatusColor(episode.status)
+                      }}>
+                        {getStatusText(episode.status)}
+                      </span>
+
 
                                             <button style={{
                                                 background: 'none',

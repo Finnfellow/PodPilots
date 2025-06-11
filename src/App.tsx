@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import OnboardingFlow from './components/OnboardingFlow';
 import Dashboard from './components/Dashboard';
-import { userService, type UserProfile } from './utils/cloudStorage';
+import { userService } from './utils/cloudStorage';
 import './App.css';
 
 function App() {
     const [currentView, setCurrentView] = useState<'onboarding' | 'dashboard' | 'loading'>('loading');
-    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
     useEffect(() => {
         // Check if user has completed onboarding
@@ -14,7 +13,6 @@ function App() {
         const podcastMetadata = userService.getPodcastMetadata();
 
         if (profile && podcastMetadata) {
-            setUserProfile(profile);
             setCurrentView('dashboard');
         } else {
             setCurrentView('onboarding');
@@ -22,8 +20,6 @@ function App() {
     }, []);
 
     const handleOnboardingComplete = () => {
-        const profile = userService.getUserProfile();
-        setUserProfile(profile);
         setCurrentView('dashboard');
     };
 

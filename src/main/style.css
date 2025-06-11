@@ -1,0 +1,27 @@
+.me-auto{
+    margin-right: 0 !important;
+    margin-left: auto !important;
+}
+
+.navbar-brand img{
+    width: 50%;
+}
+
+.banner{
+    position: relative;
+}
+
+.slogan{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.slogan h3{
+    text-align: center;
+}
+
+.post_banner p{
+    text-align: center;
+}

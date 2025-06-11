@@ -2,11 +2,12 @@
 import { useState, useEffect } from 'react';
 import OnboardingFlow from './components/OnboardingFlow';
 import Dashboard from './components/Dashboard';
+import NewEpisodeUpload from './components/NewEpisodeUpload.tsx';
 import { userService } from './utils/cloudStorage';
 import './App.css';
 
 function App() {
-    const [currentView, setCurrentView] = useState<'onboarding' | 'dashboard' | 'loading'>('loading');
+    const [currentView, setCurrentView] = useState<'onboarding' | 'dashboard' | 'upload' | 'loading'>('loading');
 
     useEffect(() => {
         // Check if user has completed onboarding
@@ -21,6 +22,14 @@ function App() {
     }, []);
 
     const handleOnboardingComplete = () => {
+        setCurrentView('dashboard');
+    };
+
+    const handleNavigateToUpload = () => {
+        setCurrentView('upload');
+    };
+
+    const handleNavigateToDashboard = () => {
         setCurrentView('dashboard');
     };
 
@@ -84,7 +93,11 @@ function App() {
     }
 
     if (currentView === 'dashboard') {
-        return <Dashboard />;
+        return <Dashboard onNavigateToUpload={handleNavigateToUpload} />;
+    }
+
+    if (currentView === 'upload') {
+        return <NewEpisodeUpload onNavigateToDashboard={handleNavigateToDashboard} />;
     }
 
     return (

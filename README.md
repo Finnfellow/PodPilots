@@ -2,6 +2,14 @@
 
 PodPilot is a streamlined podcast publishing and analytics dashboard designed to make managing, monetizing, and distributing podcast episodes as simple and centralized as possible.
 
+## MVP Features
+
+- Home page 
+- Create an account on Podpilot
+- Dashboard to show previous uploads
+- Upload a video to a platform
+
+
 ## Features
 
 - Create and manage multiple podcasts under one account

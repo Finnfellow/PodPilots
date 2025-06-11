@@ -1,9 +1,23 @@
 import React, { useState } from 'react';
+import { userService } from '../utils/cloudStorage';
 
 interface FormData {
+
+    username: string;
+    password: string;
+    verifyPassword: string;
+    email: string;
+    podcastName: string;
+    description: string;
+    tags: string[];
+    logo: File | null;
+    youtubeConnected: boolean;
+    instagramConnected: boolean;
+
     podcastName: string;
     description: string;
     logo: File | null;
+
 }
 
 interface OnboardingFlowProps {
@@ -12,18 +26,59 @@ interface OnboardingFlowProps {
 
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     const [currentStep, setCurrentStep] = useState(1);
+
+    const [verificationCode, setVerificationCode] = useState('');
+    const [isVerified, setIsVerified] = useState(false);
+    const [tagInput, setTagInput] = useState('');
+    const correctCode = '123456'; // In real app, this would come from backend
+
+    const [formData, setFormData] = useState<FormData>({
+        username: '',
+        password: '',
+        verifyPassword: '',
+        email: '',
+        podcastName: '',
+        description: '',
+        tags: [],
+        logo: null,
+        youtubeConnected: false,
+        instagramConnected: false,
+
     const [formData, setFormData] = useState<FormData>({
         podcastName: '',
         description: '',
         logo: null,
+
     });
 
     const updateFormData = (field: keyof FormData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
+
+    const handleVerification = () => {
+        if (verificationCode === correctCode) {
+            setIsVerified(true);
+            // Auto advance to next step after successful verification
+            setTimeout(() => {
+                nextStep();
+            }, 500);
+        } else {
+            alert('Incorrect verification code. Please try again.');
+        }
+    };
+
+    const nextStep = () => {
+        // For step 3, check if verification is complete
+        if (currentStep === 3 && !isVerified) {
+            return; // Don't allow progression without verification
+        }
+
+        if (currentStep < 6) {
+
     const nextStep = () => {
         if (currentStep < 2) {
+
             setCurrentStep(currentStep + 1);
         }
     };
@@ -34,10 +89,49 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         }
     };
 
-    const handleSubmit = () => {
-        console.log('Onboarding complete:', formData);
-        if (onComplete) {
-            onComplete();
+    const addTag = () => {
+        if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+            updateFormData('tags', [...formData.tags, tagInput.trim()]);
+            setTagInput('');
+        }
+    };
+
+    const removeTag = (tagToRemove: string) => {
+        updateFormData('tags', formData.tags.filter(tag => tag !== tagToRemove));
+    };
+
+    const handleSubmit = async () => {
+        try {
+            // Create user profile
+            const userProfile = await userService.createUserProfile(formData.username, formData.email);
+
+            // Store podcast metadata
+            const podcastMetadata = {
+                name: formData.podcastName,
+                description: formData.description,
+                tags: formData.tags,
+                logoUrl: undefined,
+                logoPublicId: undefined,
+                createdAt: new Date().toISOString()
+            };
+
+            localStorage.setItem('podcastMetadata', JSON.stringify(podcastMetadata));
+
+            // Set flag for welcome message
+            localStorage.setItem('justCompletedOnboarding', 'true');
+
+            console.log('Onboarding complete:', {
+                userProfile,
+                podcastMetadata,
+                formData
+            });
+
+            if (onComplete) {
+                onComplete();
+            }
+        } catch (error) {
+            console.error('Error completing onboarding:', error);
+            alert('There was an error completing your setup. Please try again.');
         }
     };
 
@@ -49,32 +143,35 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 </div>
             </div>
 
-            <h2 className="step-title">Create Your Podcast</h2>
-            <p className="step-subtitle">Set up your podcast details to get started</p>
+
+            <h2 className="step-title">Create Your Account</h2>
+            <p className="step-subtitle">Let's get started with your basic information</p>
 
             <div className="step-indicator">
                 <div className="step-circle active">{currentStep}</div>
             </div>
 
-            <div className="podcast-setup">
+            <div className="auth-section">
                 <div className="form-group">
                     <input
                         type="text"
-                        placeholder="Podcast Name"
-                        value={formData.podcastName}
-                        onChange={(e) => updateFormData('podcastName', e.target.value)}
+                        placeholder="Username"
+                        value={formData.username}
+                        onChange={(e) => updateFormData('username', e.target.value)}
                         className="form-input"
+                        required
                     />
                 </div>
 
                 <div className="form-group">
-          <textarea
-              placeholder="Podcast Description"
-              value={formData.description}
-              onChange={(e) => updateFormData('description', e.target.value)}
-              className="form-textarea"
-              rows={4}
-          />
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        value={formData.email}
+                        onChange={(e) => updateFormData('email', e.target.value)}
+                        className="form-input"
+                        required
+                    />
                 </div>
             </div>
 
@@ -88,6 +185,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 </button>
                 <button
                     onClick={nextStep}
+                    disabled={!formData.username.trim() || !formData.email.trim()}
                     className="nav-btn primary"
                 >
                     Next
@@ -104,8 +202,258 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 </div>
             </div>
 
+            <h2 className="step-title">Secure Your Account</h2>
+            <p className="step-subtitle">Create a strong password to protect your account</p>
+
+            <div className="step-indicator">
+                <div className="step-circle active">{currentStep}</div>
+            </div>
+
+            <div className="auth-section">
+                <div className="form-group">
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        value={formData.password}
+                        onChange={(e) => updateFormData('password', e.target.value)}
+                        className="form-input"
+                        required
+                        minLength={8}
+                    />
+                </div>
+
+                <div className="form-group">
+                    <input
+                        type="password"
+                        placeholder="Verify Password"
+                        value={formData.verifyPassword}
+                        onChange={(e) => updateFormData('verifyPassword', e.target.value)}
+                        className="form-input"
+                        required
+                    />
+                </div>
+
+                {formData.password && formData.verifyPassword && formData.password !== formData.verifyPassword && (
+                    <div style={{
+                        color: '#DC3545',
+                        fontSize: '0.875rem',
+                        fontFamily: 'Satoshi, sans-serif',
+                        marginTop: '0.5rem'
+                    }}>
+                        Passwords do not match
+                    </div>
+                )}
+            </div>
+
+            <div className="navigation-buttons">
+                <button
+                    onClick={prevStep}
+                    className="nav-btn secondary"
+                >
+                    Previous
+                </button>
+                <button
+                    onClick={nextStep}
+                    disabled={!formData.password || !formData.verifyPassword || formData.password !== formData.verifyPassword}
+                    className="nav-btn primary"
+                >
+                    Next
+                </button>
+            </div>
+        </div>
+    );
+
+    const renderStep3 = () => (
+        <div className="onboarding-card">
+            <div className="logo-section">
+                <div className="logo">
+                    <span className="logo-text">PodPilot</span>
+                </div>
+            </div>
+
+            <h2 className="step-title">Verify Your Email</h2>
+            <p className="step-subtitle">We've sent a verification code to {formData.email}</p>
+
+            <div className="step-indicator">
+                <div className="step-circle active">{currentStep}</div>
+            </div>
+
+            <div className="auth-section">
+                <div className="form-group">
+                    <input
+                        type="text"
+                        placeholder="Verification Code (use: 123456)"
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value)}
+                        className="form-input"
+                        maxLength={6}
+                    />
+                </div>
+
+                <button type="button" className="secondary-btn">
+                    Resend Code
+                </button>
+
+                <button
+                    type="button"
+                    onClick={handleVerification}
+                    className="primary-btn"
+                    disabled={!verificationCode.trim()}
+                >
+                    Verify
+                </button>
+
+                {isVerified && (
+                    <div className="verification-success">
+                        ✅ Email verified successfully!
+                    </div>
+                )}
+            </div>
+
+            <div className="navigation-buttons">
+                <button
+                    onClick={prevStep}
+                    className="nav-btn secondary"
+                >
+                    Previous
+                </button>
+                <button
+                    onClick={nextStep}
+                    className={`nav-btn primary ${currentStep === 3 && !isVerified ? 'disabled' : ''}`}
+                    disabled={currentStep === 3 && !isVerified}
+                >
+                    Next
+                </button>
+            </div>
+        </div>
+    );
+
+    const renderStep4 = () => (
+        <div className="onboarding-card">
+            <div className="logo-section">
+                <div className="logo">
+                    <span className="logo-text">PodPilot</span>
+                </div>
+            </div>
+
+            <h2 className="step-title">Tell Us About Your Podcast</h2>
+            <p className="step-subtitle">Let's set up your podcast details</p>
+
+            <h2 className="step-title">Create Your Podcast</h2>
+            <p className="step-subtitle">Set up your podcast details to get started</p>
+
+
+            <div className="step-indicator">
+                <div className="step-circle active">{currentStep}</div>
+            </div>
+
+            <div className="podcast-setup">
+                <div className="form-group">
+                    <input
+                        type="text"
+                        placeholder="Podcast Name"
+                        value={formData.podcastName}
+                        onChange={(e) => updateFormData('podcastName', e.target.value)}
+                        className="form-input"
+                        required
+                    />
+                </div>
+
+                <div className="form-group">
+                    <textarea
+                        placeholder="Podcast Description"
+                        value={formData.description}
+                        onChange={(e) => updateFormData('description', e.target.value)}
+                        className="form-textarea"
+                        rows={4}
+                        required
+                    />
+                </div>
+
+                <div className="form-group">
+                    <div className="tag-input-container">
+                        <input
+                            type="text"
+                            placeholder="Add tags (press Enter or click Add)"
+                            value={tagInput}
+                            onChange={(e) => setTagInput(e.target.value)}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    addTag();
+                                }
+                            }}
+                            className="form-input"
+                        />
+                        <button
+                            type="button"
+                            onClick={addTag}
+                            className="add-tag-btn"
+                            disabled={!tagInput.trim()}
+                        >
+                            Add Tag
+                        </button>
+                    </div>
+
+                    {formData.tags.length > 0 && (
+                        <div className="tags-container">
+                            {formData.tags.map((tag, index) => (
+                                <span key={index} className="tag">
+                                    {tag}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeTag(tag)}
+                                        className="remove-tag"
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="navigation-buttons">
+                <button
+                    onClick={prevStep}
+
+                    disabled={currentStep === 1}
+
+                    className="nav-btn secondary"
+                >
+                    Previous
+                </button>
+                <button
+                    onClick={nextStep}
+                    disabled={!formData.podcastName.trim() || !formData.description.trim()}
+                    className="nav-btn primary"
+                >
+                    Next
+                </button>
+            </div>
+        </div>
+    );
+
+
+    const renderStep5 = () => (
+
+    const renderStep2 = () => (
+
+        <div className="onboarding-card">
+            <div className="logo-section">
+                <div className="logo">
+                    <span className="logo-text">PodPilot</span>
+                </div>
+            </div>
+
+
+            <h2 className="step-title">Upload Your Podcast Logo</h2>
+            <p className="step-subtitle">Add a logo to make your podcast stand out (optional)</p>
+
             <h2 className="step-title">Add Your Podcast Logo</h2>
             <p className="step-subtitle">Upload a logo for your podcast (optional)</p>
+
 
             <div className="step-indicator">
                 <div className="step-circle active">{currentStep}</div>
@@ -133,6 +481,119 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                         <p>✅ Logo uploaded: {formData.logo.name}</p>
                     </div>
                 )}
+
+                <div style={{
+                    textAlign: 'center',
+                    fontSize: '0.875rem',
+                    color: '#6C757D',
+                    fontFamily: 'Satoshi, sans-serif',
+                    marginTop: '1rem'
+                }}>
+                    <p style={{ margin: '0 0 0.5rem 0' }}>
+                        You can upload your logo now or add it later in your dashboard
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.75rem' }}>
+                        Recommended size: 1400x1400px, Max: 5MB
+                    </p>
+                </div>
+            </div>
+
+            <div className="navigation-buttons">
+                <button
+                    onClick={prevStep}
+                    className="nav-btn secondary"
+                >
+                    Previous
+                </button>
+                <button
+
+                    onClick={nextStep}
+                    className="nav-btn primary"
+                >
+                    Next
+                </button>
+            </div>
+        </div>
+    );
+
+    const renderStep6 = () => (
+        <div className="onboarding-card">
+            <div className="logo-section">
+                <div className="logo">
+                    <span className="logo-text">PodPilot</span>
+                </div>
+            </div>
+
+            <h2 className="step-title">Connect Your Platforms</h2>
+            <p className="step-subtitle">Link your social media accounts for easy publishing (optional)</p>
+
+            <div className="step-indicator">
+                <div className="step-circle active">{currentStep}</div>
+            </div>
+
+            <div className="podcast-setup">
+                <div className="social-connections">
+                    <div className="connection-item">
+                        <div>
+                            <span>📺 YouTube</span>
+                            <p className="connection-desc">Publish audio with generated visuals</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => updateFormData('youtubeConnected', !formData.youtubeConnected)}
+                            className={`connection-btn ${formData.youtubeConnected ? 'connected' : ''}`}
+                        >
+                            {formData.youtubeConnected ? '✓ Connected' : 'Connect'}
+                        </button>
+                    </div>
+
+                    <div className="connection-item">
+                        <div>
+                            <span>📸 Instagram</span>
+                            <p className="connection-desc">Share podcast clips as Reels</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => updateFormData('instagramConnected', !formData.instagramConnected)}
+                            className={`connection-btn ${formData.instagramConnected ? 'connected' : ''}`}
+                        >
+                            {formData.instagramConnected ? '✓ Connected' : 'Connect'}
+                        </button>
+                    </div>
+                </div>
+
+                <p className="skip-text">You can connect these later in your dashboard</p>
+
+                <div style={{
+                    backgroundColor: '#F8F9FF',
+                    border: '1px solid #4285F4',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    marginTop: '1.5rem',
+                    textAlign: 'center'
+                }}>
+                    <div style={{
+                        fontSize: '1.25rem',
+                        marginBottom: '0.5rem'
+                    }}>🚀</div>
+                    <h3 style={{
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: '#212529',
+                        margin: '0 0 0.5rem 0',
+                        fontFamily: 'Satoshi, sans-serif'
+                    }}>
+                        Ready for Takeoff!
+                    </h3>
+                    <p style={{
+                        fontSize: '0.875rem',
+                        color: '#6C757D',
+                        margin: 0,
+                        fontFamily: 'Satoshi, sans-serif'
+                    }}>
+                        Your podcast setup is complete. Let's launch your dashboard!
+                    </p>
+                </div>
             </div>
 
             <div className="navigation-buttons">
@@ -145,8 +606,18 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 <button
                     onClick={handleSubmit}
                     className="nav-btn primary"
+                    style={{
+                        background: 'linear-gradient(135deg, #4285F4 0%, #1A73E8 100%)',
+                        fontWeight: '600'
+                    }}
+                >
+                    Launch Dashboard 🚀
+
+                    onClick={handleSubmit}
+                    className="nav-btn primary"
                 >
                     Create Podcast
+
                 </button>
             </div>
         </div>
@@ -158,6 +629,17 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 return renderStep1();
             case 2:
                 return renderStep2();
+
+            case 3:
+                return renderStep3();
+            case 4:
+                return renderStep4();
+            case 5:
+                return renderStep5();
+            case 6:
+                return renderStep6();
+
+
             default:
                 return renderStep1();
         }
@@ -587,7 +1069,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           border: none;
         }
 
-        .nav-btn.primary:hover {
+        .nav-btn.primary:hover:not(:disabled) {
           background: #333333;
           transform: translateY(-1px);
         }
@@ -598,7 +1080,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           border: 1.5px solid #CED4DA;
         }
 
-        .nav-btn.secondary:hover {
+        .nav-btn.secondary:hover:not(:disabled) {
           background: #F8F9FA;
           border-color: #ADB5BD;
         }
@@ -616,6 +1098,84 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         .nav-btn.disabled {
           opacity: 0.4;
           cursor: not-allowed;
+        }
+
+        .tag-input-container {
+          display: flex;
+          gap: 0.5rem;
+          align-items: flex-end;
+        }
+
+        .tag-input-container .form-input {
+          flex: 1;
+        }
+
+        .add-tag-btn {
+          padding: 1rem 1.5rem;
+          background: #4285F4;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-family: 'Satoshi', sans-serif;
+          font-weight: 500;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        }
+
+        .add-tag-btn:hover:not(:disabled) {
+          background: #3367D6;
+        }
+
+        .add-tag-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .tags-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-top: 1rem;
+          padding: 1rem;
+          background: #FAFAFA;
+          border-radius: 8px;
+          border: 1px solid #E8E8E8;
+        }
+
+        .tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 0.75rem;
+          background: #4285F4;
+          color: white;
+          border-radius: 20px;
+          font-family: 'Satoshi', sans-serif;
+          font-size: 0.8rem;
+          font-weight: 500;
+        }
+
+        .remove-tag {
+          background: none;
+          border: none;
+          color: white;
+          cursor: pointer;
+          font-size: 1.2rem;
+          line-height: 1;
+          padding: 0;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 0.2s ease;
+        }
+
+        .remove-tag:hover {
+          background: rgba(255, 255, 255, 0.2);
         }
       `}</style>
         </>

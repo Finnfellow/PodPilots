@@ -1,84 +1,55 @@
 import React, { useState } from 'react';
-import { userService } from '../utils/cloudStorage';
+import { useNavigate } from 'react-router-dom';
 
-interface FormData {
+type FormData = {
 
-    username: string;
-    password: string;
-    verifyPassword: string;
-    email: string;
     podcastName: string;
     description: string;
     tags: string[];
     logo: File | null;
     youtubeConnected: boolean;
     instagramConnected: boolean;
+};
 
-    podcastName: string;
-    description: string;
-    logo: File | null;
+type OnboardingFlowProps = {
+    onComplete: () => void;
+};
 
-}
-
-interface OnboardingFlowProps {
-    onComplete?: () => void;
-}
-
-const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
+const OnboardingFlow: React.FC<OnboardingFlowProps> = () => {
     const [currentStep, setCurrentStep] = useState(1);
-
-    const [verificationCode, setVerificationCode] = useState('');
-    const [isVerified, setIsVerified] = useState(false);
+    // const [verificationCode, setVerificationCode] = useState('');
+    // const [isVerified, setIsVerified] = useState(false);
     const [tagInput, setTagInput] = useState('');
-    const correctCode = '123456'; // In real app, this would come from backend
+    // const correctCode = '123456';
 
     const [formData, setFormData] = useState<FormData>({
-        username: '',
-        password: '',
-        verifyPassword: '',
-        email: '',
+
         podcastName: '',
         description: '',
         tags: [],
         logo: null,
         youtubeConnected: false,
         instagramConnected: false,
-
-    const [formData, setFormData] = useState<FormData>({
-        podcastName: '',
-        description: '',
-        logo: null,
-
     });
 
     const updateFormData = (field: keyof FormData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-
-    const handleVerification = () => {
-        if (verificationCode === correctCode) {
-            setIsVerified(true);
-            // Auto advance to next step after successful verification
-            setTimeout(() => {
-                nextStep();
-            }, 500);
-        } else {
-            alert('Incorrect verification code. Please try again.');
-        }
-    };
+    // const handleVerification = () => {
+    //     if (verificationCode === correctCode) {
+    //         setIsVerified(true);
+    //         setTimeout(() => {
+    //             nextStep();
+    //         }, 500);
+    //     } else {
+    //         alert('Incorrect verification code. Please try again.');
+    //     }
+    // };
 
     const nextStep = () => {
-        // For step 3, check if verification is complete
-        if (currentStep === 3 && !isVerified) {
-            return; // Don't allow progression without verification
-        }
-
+        // if (currentStep === 3 && !isVerified) return;
         if (currentStep < 6) {
-
-    const nextStep = () => {
-        if (currentStep < 2) {
-
             setCurrentStep(currentStep + 1);
         }
     };
@@ -99,13 +70,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     const removeTag = (tagToRemove: string) => {
         updateFormData('tags', formData.tags.filter(tag => tag !== tagToRemove));
     };
-
+    const navigate = useNavigate();
     const handleSubmit = async () => {
-        try {
-            // Create user profile
-            const userProfile = await userService.createUserProfile(formData.username, formData.email);
 
-            // Store podcast metadata
+        navigate('/Dashboard');
+
+        /*try {
+            const navigate = useNavigate();
             const podcastMetadata = {
                 name: formData.podcastName,
                 description: formData.description,
@@ -116,217 +87,189 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             };
 
             localStorage.setItem('podcastMetadata', JSON.stringify(podcastMetadata));
-
-            // Set flag for welcome message
             localStorage.setItem('justCompletedOnboarding', 'true');
 
             console.log('Onboarding complete:', {
-                userProfile,
                 podcastMetadata,
                 formData
             });
 
-            if (onComplete) {
-                onComplete();
-            }
+            navigate('/dashboard'); // ⬅️ Add this here
+
         } catch (error) {
             console.error('Error completing onboarding:', error);
             alert('There was an error completing your setup. Please try again.');
-        }
+        }*/
     };
-
-    const renderStep1 = () => (
-        <div className="onboarding-card">
-            <div className="logo-section">
-                <div className="logo">
-                    <span className="logo-text">PodPilot</span>
-                </div>
-            </div>
-
-
-            <h2 className="step-title">Create Your Account</h2>
-            <p className="step-subtitle">Let's get started with your basic information</p>
-
-            <div className="step-indicator">
-                <div className="step-circle active">{currentStep}</div>
-            </div>
-
-            <div className="auth-section">
-                <div className="form-group">
-                    <input
-                        type="text"
-                        placeholder="Username"
-                        value={formData.username}
-                        onChange={(e) => updateFormData('username', e.target.value)}
-                        className="form-input"
-                        required
-                    />
-                </div>
-
-                <div className="form-group">
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={formData.email}
-                        onChange={(e) => updateFormData('email', e.target.value)}
-                        className="form-input"
-                        required
-                    />
-                </div>
-            </div>
-
-            <div className="navigation-buttons">
-                <button
-                    onClick={prevStep}
-                    disabled={currentStep === 1}
-                    className="nav-btn secondary"
-                >
-                    Previous
-                </button>
-                <button
-                    onClick={nextStep}
-                    disabled={!formData.username.trim() || !formData.email.trim()}
-                    className="nav-btn primary"
-                >
-                    Next
-                </button>
-            </div>
-        </div>
-    );
-
-    const renderStep2 = () => (
-        <div className="onboarding-card">
-            <div className="logo-section">
-                <div className="logo">
-                    <span className="logo-text">PodPilot</span>
-                </div>
-            </div>
-
-            <h2 className="step-title">Secure Your Account</h2>
-            <p className="step-subtitle">Create a strong password to protect your account</p>
-
-            <div className="step-indicator">
-                <div className="step-circle active">{currentStep}</div>
-            </div>
-
-            <div className="auth-section">
-                <div className="form-group">
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={formData.password}
-                        onChange={(e) => updateFormData('password', e.target.value)}
-                        className="form-input"
-                        required
-                        minLength={8}
-                    />
-                </div>
-
-                <div className="form-group">
-                    <input
-                        type="password"
-                        placeholder="Verify Password"
-                        value={formData.verifyPassword}
-                        onChange={(e) => updateFormData('verifyPassword', e.target.value)}
-                        className="form-input"
-                        required
-                    />
-                </div>
-
-                {formData.password && formData.verifyPassword && formData.password !== formData.verifyPassword && (
-                    <div style={{
-                        color: '#DC3545',
-                        fontSize: '0.875rem',
-                        fontFamily: 'Satoshi, sans-serif',
-                        marginTop: '0.5rem'
-                    }}>
-                        Passwords do not match
-                    </div>
-                )}
-            </div>
-
-            <div className="navigation-buttons">
-                <button
-                    onClick={prevStep}
-                    className="nav-btn secondary"
-                >
-                    Previous
-                </button>
-                <button
-                    onClick={nextStep}
-                    disabled={!formData.password || !formData.verifyPassword || formData.password !== formData.verifyPassword}
-                    className="nav-btn primary"
-                >
-                    Next
-                </button>
-            </div>
-        </div>
-    );
-
-    const renderStep3 = () => (
-        <div className="onboarding-card">
-            <div className="logo-section">
-                <div className="logo">
-                    <span className="logo-text">PodPilot</span>
-                </div>
-            </div>
-
-            <h2 className="step-title">Verify Your Email</h2>
-            <p className="step-subtitle">We've sent a verification code to {formData.email}</p>
-
-            <div className="step-indicator">
-                <div className="step-circle active">{currentStep}</div>
-            </div>
-
-            <div className="auth-section">
-                <div className="form-group">
-                    <input
-                        type="text"
-                        placeholder="Verification Code (use: 123456)"
-                        value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
-                        className="form-input"
-                        maxLength={6}
-                    />
-                </div>
-
-                <button type="button" className="secondary-btn">
-                    Resend Code
-                </button>
-
-                <button
-                    type="button"
-                    onClick={handleVerification}
-                    className="primary-btn"
-                    disabled={!verificationCode.trim()}
-                >
-                    Verify
-                </button>
-
-                {isVerified && (
-                    <div className="verification-success">
-                        ✅ Email verified successfully!
-                    </div>
-                )}
-            </div>
-
-            <div className="navigation-buttons">
-                <button
-                    onClick={prevStep}
-                    className="nav-btn secondary"
-                >
-                    Previous
-                </button>
-                <button
-                    onClick={nextStep}
-                    className={`nav-btn primary ${currentStep === 3 && !isVerified ? 'disabled' : ''}`}
-                    disabled={currentStep === 3 && !isVerified}
-                >
-                    Next
-                </button>
-            </div>
-        </div>
-    );
+    // const renderStep1 = () => (
+    //     <div className="onboarding-card">
+    //         <div className="logo-section">
+    //             <div className="logo">
+    //                 <span className="logo-text">PodPilot</span>
+    //             </div>
+    //         </div>
+    //
+    //         <h2 className="step-title">Create Your Account</h2>
+    //         <p className="step-subtitle">Let's get started with your basic information</p>
+    //
+    //         <div className="step-indicator">
+    //             <div className="step-circle active">{currentStep}</div>
+    //         </div>
+    //
+    //         <div className="auth-section">
+    //             <div className="form-group">
+    //                 <input
+    //                     type="text"
+    //                     placeholder="Username"
+    //                     className="form-input"
+    //                     required
+    //                 />
+    //             </div>
+    //
+    //             <div className="form-group">
+    //                 <input
+    //                     type="email"
+    //                     placeholder="Email"
+    //                     className="form-input"
+    //                     required
+    //                 />
+    //             </div>
+    //         </div>
+    //
+    //         <div className="navigation-buttons">
+    //             <button
+    //                 onClick={prevStep}
+    //                 disabled={currentStep === 1}
+    //                 className="nav-btn secondary"
+    //             >
+    //                 Previous
+    //             </button>
+    //             <button
+    //                 onClick={nextStep}
+    //                 className="nav-btn primary"
+    //             >
+    //                 Next
+    //             </button>
+    //         </div>
+    //     </div>
+    // );
+    //
+    // const renderStep2 = () => (
+    //     <div className="onboarding-card">
+    //         <div className="logo-section">
+    //             <div className="logo">
+    //                 <span className="logo-text">PodPilot</span>
+    //             </div>
+    //         </div>
+    //
+    //         <h2 className="step-title">Secure Your Account</h2>
+    //         <p className="step-subtitle">Create a strong password to protect your account</p>
+    //
+    //         <div className="step-indicator">
+    //             <div className="step-circle active">{currentStep}</div>
+    //         </div>
+    //
+    //         <div className="auth-section">
+    //             <div className="form-group">
+    //                 <input
+    //                     type="password"
+    //                     placeholder="Password"
+    //                     className="form-input"
+    //                     required
+    //                     minLength={8}
+    //                 />
+    //             </div>
+    //
+    //             <div className="form-group">
+    //                 <input
+    //                     type="password"
+    //                     placeholder="Verify Password"
+    //
+    //
+    //                     className="form-input"
+    //                     required
+    //                 />
+    //             </div>
+    //         </div>
+    //
+    //         <div className="navigation-buttons">
+    //             <button
+    //                 onClick={prevStep}
+    //                 className="nav-btn secondary"
+    //             >
+    //                 Previous
+    //             </button>
+    //             <button
+    //                 onClick={nextStep}
+    //                 className="nav-btn primary"
+    //             >
+    //                 Next
+    //             </button>
+    //         </div>
+    //     </div>
+    // );
+    //
+    // const renderStep3 = () => (
+    //     <div className="onboarding-card">
+    //         <div className="logo-section">
+    //             <div className="logo">
+    //                 <span className="logo-text">PodPilot</span>
+    //             </div>
+    //         </div>
+    //
+    //         <div className="step-indicator">
+    //             <div className="step-circle active">{currentStep}</div>
+    //         </div>
+    //
+    //         <div className="auth-section">
+    //             <div className="form-group">
+    //                 <input
+    //                     type="text"
+    //                     placeholder="Verification Code (use: 123456)"
+    //                     value={verificationCode}
+    //                     onChange={(e) => setVerificationCode(e.target.value)}
+    //                     className="form-input"
+    //                     maxLength={6}
+    //                 />
+    //             </div>
+    //
+    //             <button type="button" className="secondary-btn">
+    //                 Resend Code
+    //             </button>
+    //
+    //             <button
+    //                 type="button"
+    //                 onClick={handleVerification}
+    //                 className="primary-btn"
+    //                 disabled={!verificationCode.trim()}
+    //             >
+    //                 Verify
+    //             </button>
+    //
+    //             {isVerified && (
+    //                 <div className="verification-success">
+    //                     ✅ Email verified successfully!
+    //                 </div>
+    //             )}
+    //         </div>
+    //
+    //         <div className="navigation-buttons">
+    //             <button
+    //                 onClick={prevStep}
+    //                 className="nav-btn secondary"
+    //             >
+    //                 Previous
+    //             </button>
+    //             <button
+    //                 onClick={nextStep}
+    //                 className={`nav-btn primary ${currentStep === 3 && !isVerified ? 'disabled' : ''}`}
+    //                 disabled={currentStep === 3 && !isVerified}
+    //             >
+    //                 Next
+    //             </button>
+    //         </div>
+    //     </div>
+    // );
 
     const renderStep4 = () => (
         <div className="onboarding-card">
@@ -437,8 +380,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
 
 
     const renderStep5 = () => (
-
-    const renderStep2 = () => (
 
         <div className="onboarding-card">
             <div className="logo-section">
@@ -613,11 +554,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                 >
                     Launch Dashboard 🚀
 
-                    onClick={handleSubmit}
-                    className="nav-btn primary"
-                >
-                    Create Podcast
-
                 </button>
             </div>
         </div>
@@ -625,13 +561,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
 
     const renderCurrentStep = () => {
         switch (currentStep) {
-            case 1:
-                return renderStep1();
-            case 2:
-                return renderStep2();
-
-            case 3:
-                return renderStep3();
+            // case 1:
+            //     return renderStep1();
+            // case 2:
+            //     return renderStep2();
+            //
+            // case 3:
+            //     return renderStep3();
             case 4:
                 return renderStep4();
             case 5:
@@ -641,7 +577,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
 
 
             default:
-                return renderStep1();
+                return renderStep4();
         }
     };
 

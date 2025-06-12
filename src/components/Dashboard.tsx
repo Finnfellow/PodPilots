@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import ImageUpload from './ImageUpload';
 import { userService, type UserProfile, type PodcastMetadata } from '../utils/cloudStorage';
+import {useNavigate} from "react-router-dom";
 
-import { useState } from 'react';
 
 
 interface Episode {
@@ -28,7 +28,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'episodes'>('overview');
-
+    const navigate = useNavigate();
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [podcastMetadata, setPodcastMetadata] = useState<PodcastMetadata | null>(null);
     const [isEditingMetadata, setIsEditingMetadata] = useState(false);
@@ -37,15 +37,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         name: '',
         description: '',
         tags: [] as string[]
+    });
 
 
     // Mock data - replace with real data from your backend
-    const [stats] = useState<PodcastStats>({
-        totalEpisodes: 5,
-        totalPlays: 247,
-        rssUrl: 'https://podpilot.com/feeds/your-podcast.xml'
+    //const [stats] = useState<PodcastStats>({
+    //   totalEpisodes: 5,
+    // totalPlays: 247,
+    //  rssUrl: 'https://podpilot.com/feeds/your-podcast.xml'
 
-    });
+    //  });
     const [tagInput, setTagInput] = useState('');
 
     // Define recentEpisodes
@@ -308,8 +309,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+
+
                         <button
-                            onClick={onNavigateToUpload}
+
                             style={{
                                 padding: '0.75rem 1.5rem',
                                 backgroundColor: '#000000',
@@ -322,7 +325,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease'
                             }}
-                        >
+                            onClick={() => navigate('/NewEpisodeUpload')}>
+
                             Upload Episode
                         </button>
 
@@ -352,14 +356,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
             </header>
 
             {/* Main Content */}
-            <main style={{
-                maxWidth: '1200px',
-                margin: '0 auto',
-                padding: '2rem'
-            }}>
+            <main
+                style={
+                    {
+                        maxWidth: '1200px',
+                        margin: '0 auto',
+                        padding: '2rem'
+                    }
+                }>
                 {activeTab === 'overview' && (
                     <div>
-                        {/* Welcome Section */}
+                        {/* Welcome, Section */}
                         <div style={{
                             backgroundColor: 'white',
                             borderRadius: '12px',
@@ -630,7 +637,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                     )}
                                 </>
                             )}
-
+                            <p>
                                 Upload episodes, manage your RSS feed, and let listeners discover your content.
                             </p>
 
@@ -789,6 +796,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                             border: '1px solid #E8E8E8'
                                         }}
                                     >
+
                                         <div style={{ flex: 1 }}>
                                             <h3 style={{
                                                 fontFamily: 'Satoshi, sans-serif',
@@ -821,24 +829,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                           {episode.publishDate || 'Not published'}
                         </span>
 
-                                                <span style={{
-                                                    fontSize: '0.8rem',
-                                                    color: '#6C757D',
-                                                    fontFamily: 'Satoshi, sans-serif'
-                                                }}>
+                                                {/*<span style={{
+                                               //     fontSize: '0.8rem',
+                                                 //   color: '#6C757D',
+                                             //       fontFamily: 'Satoshi, sans-serif'
+                                           //     }}>
 
-                                                    {episode.publishDate || 'Not published'}
-                                                </span>
-                                                <span style={{
-                                                    fontSize: '0.8rem',
-                                                    color: '#6C757D',
-                                                    fontFamily: 'Satoshi, sans-serif'
-                                                }}>
-                                                    {episode.duration}
-                                                </span>
+                                             //       {episode.publishDate || 'Not published'}
+                                               // </span>
+                                                //<span style={{
+                                                 //   fontSize: '0.8rem',
+                                                   // color: '#6C757D',
+                                                   // fontFamily: 'Satoshi, sans-serif'
+                                               // }}>
+                                              //      {episode.duration}
+                                              //  </span>
 
-                          {episode.duration}
-                        </span>
+
+                                          //  </span>*/}
 
                                                 {episode.status === 'published' && episode.audioFile && (
                                                     <audio
@@ -874,15 +882,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                                 {getStatusText(episode.status)}
                                             </span>
 
-                      <span style={{
-                          padding: '0.25rem 0.75rem',
-                          borderRadius: '20px',
-                          fontSize: '0.75rem',
-                          fontWeight: '500',
-                          fontFamily: 'Satoshi, sans-serif',
-                          backgroundColor: getStatusColor(episode.status) + '20',
-                          color: getStatusColor(episode.status)
-                      }}>
+                                            <span style={{
+                                                padding: '0.25rem 0.75rem',
+                                                borderRadius: '20px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: '500',
+                                                fontFamily: 'Satoshi, sans-serif',
+                                                backgroundColor: getStatusColor(episode.status) + '20',
+                                                color: getStatusColor(episode.status)
+                                            }}>
                         {getStatusText(episode.status)}
                       </span>
 

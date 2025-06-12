@@ -10,6 +10,17 @@ interface AudioFile {
     id: string;
 }
 
+interface VideoFile {
+    file: File;
+    preview: string;
+    duration?: string;
+    size: string;
+    uploadProgress: number;
+    status: 'uploading' | 'completed' | 'error';
+    id: string;
+    thumbnail?: string;
+}
+
 interface EpisodeData {
     title: string;
     description: string;
@@ -18,9 +29,15 @@ interface EpisodeData {
     status: 'draft' | 'scheduled' | 'published';
 }
 
-const NewEpisodeUpload: React.FC = () => {
+interface NewEpisodeUploadProps {
+    onNavigateToDashboard?: () => void;
+}
+
+const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboard }) => {
     const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
+    const [videoFiles, setVideoFiles] = useState<VideoFile[]>([]);
     const [dragActive, setDragActive] = useState(false);
+    const [videoDragActive, setVideoDragActive] = useState(false);
     const [episodeData, setEpisodeData] = useState<EpisodeData>({
         title: '',
         description: '',
@@ -30,6 +47,7 @@ const NewEpisodeUpload: React.FC = () => {
     });
     const [tagInput, setTagInput] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const videoInputRef = useRef<HTMLInputElement>(null);
 
     const formatFileSize = (bytes: number): string => {
         if (bytes === 0) return '0 Bytes';
@@ -56,7 +74,54 @@ const NewEpisodeUpload: React.FC = () => {
         });
     };
 
-    const simulateUpload = (fileId: string): Promise<void> => {
+    const getVideoDuration = (file: File): Promise<string> => {
+        return new Promise((resolve) => {
+            const video = document.createElement('video');
+            video.onloadedmetadata = () => {
+                const minutes = Math.floor(video.duration / 60);
+                const seconds = Math.floor(video.duration % 60);
+                resolve(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+                URL.revokeObjectURL(video.src);
+            };
+            video.onerror = () => {
+                resolve('Unknown');
+                URL.revokeObjectURL(video.src);
+            };
+            video.src = URL.createObjectURL(file);
+        });
+    };
+
+    const generateVideoThumbnail = (file: File): Promise<string> => {
+        return new Promise((resolve) => {
+            const video = document.createElement('video');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            video.onloadeddata = () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                video.currentTime = 1;
+            };
+
+            video.onseeked = () => {
+                if (ctx) {
+                    ctx.drawImage(video, 0, 0);
+                    const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
+                    resolve(thumbnail);
+                }
+                URL.revokeObjectURL(video.src);
+            };
+
+            video.onerror = () => {
+                resolve('');
+                URL.revokeObjectURL(video.src);
+            };
+
+            video.src = URL.createObjectURL(file);
+        });
+    };
+
+    const simulateUpload = (fileId: string, isVideo: boolean = false): Promise<void> => {
         return new Promise((resolve) => {
             let progress = 0;
             const interval = setInterval(() => {
@@ -64,18 +129,26 @@ const NewEpisodeUpload: React.FC = () => {
                 if (progress >= 100) {
                     progress = 100;
                     clearInterval(interval);
-                    setAudioFiles(prev => prev.map(f =>
-                        f.id === fileId
-                            ? { ...f, uploadProgress: 100, status: 'completed' }
-                            : f
-                    ));
+                    if (isVideo) {
+                        setVideoFiles(prev => prev.map(f =>
+                            f.id === fileId ? { ...f, uploadProgress: 100, status: 'completed' } : f
+                        ));
+                    } else {
+                        setAudioFiles(prev => prev.map(f =>
+                            f.id === fileId ? { ...f, uploadProgress: 100, status: 'completed' } : f
+                        ));
+                    }
                     resolve();
                 } else {
-                    setAudioFiles(prev => prev.map(f =>
-                        f.id === fileId
-                            ? { ...f, uploadProgress: Math.floor(progress) }
-                            : f
-                    ));
+                    if (isVideo) {
+                        setVideoFiles(prev => prev.map(f =>
+                            f.id === fileId ? { ...f, uploadProgress: Math.floor(progress) } : f
+                        ));
+                    } else {
+                        setAudioFiles(prev => prev.map(f =>
+                            f.id === fileId ? { ...f, uploadProgress: Math.floor(progress) } : f
+                        ));
+                    }
                 }
             }, 200);
         });
@@ -84,7 +157,7 @@ const NewEpisodeUpload: React.FC = () => {
     const handleFiles = async (files: FileList) => {
         const validFiles = Array.from(files).filter(file => {
             const isAudio = file.type.startsWith('audio/');
-            const isValidSize = file.size <= 500 * 1024 * 1024; // 500MB limit
+            const isValidSize = file.size <= 500 * 1024 * 1024;
 
             if (!isAudio) {
                 alert(`${file.name} is not an audio file`);
@@ -115,9 +188,47 @@ const NewEpisodeUpload: React.FC = () => {
             };
 
             setAudioFiles(prev => [...prev, audioFile]);
+            simulateUpload(id, false);
+        }
+    };
 
-            // Start upload simulation
-            simulateUpload(id);
+    const handleVideoFiles = async (files: FileList) => {
+        const validFiles = Array.from(files).filter(file => {
+            const isVideo = file.type.startsWith('video/');
+            const isValidSize = file.size <= 2 * 1024 * 1024 * 1024;
+
+            if (!isVideo) {
+                alert(`${file.name} is not a video file`);
+                return false;
+            }
+            if (!isValidSize) {
+                alert(`${file.name} is too large. Maximum size is 2GB`);
+                return false;
+            }
+            return true;
+        });
+
+        if (validFiles.length === 0) return;
+
+        for (const file of validFiles) {
+            const id = Math.random().toString(36).substr(2, 9);
+            const preview = URL.createObjectURL(file);
+            const duration = await getVideoDuration(file);
+            const thumbnail = await generateVideoThumbnail(file);
+
+            const videoFile: VideoFile = {
+                file,
+                preview,
+                duration,
+                size: formatFileSize(file.size),
+                uploadProgress: 0,
+                status: 'uploading',
+                id,
+                thumbnail
+            };
+
+            setVideoFiles(prev => [...prev, videoFile]);
+            simulateUpload(id, true);
         }
     };
 
@@ -137,29 +248,66 @@ const NewEpisodeUpload: React.FC = () => {
         setDragActive(false);
     };
 
+    const handleVideoDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setVideoDragActive(false);
+        handleVideoFiles(e.dataTransfer.files);
+    };
+
+    const handleVideoDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setVideoDragActive(true);
+    };
+
+    const handleVideoDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setVideoDragActive(false);
+    };
+
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             handleFiles(e.target.files);
         }
     };
 
-    const removeFile = (id: string) => {
-        setAudioFiles(prev => {
-            const file = prev.find(f => f.id === id);
-            if (file) {
-                URL.revokeObjectURL(file.preview);
-            }
-            return prev.filter(f => f.id !== id);
-        });
+    const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            handleVideoFiles(e.target.files);
+        }
     };
 
-    const retryUpload = (id: string) => {
-        setAudioFiles(prev => prev.map(f =>
-            f.id === id
-                ? { ...f, uploadProgress: 0, status: 'uploading' }
-                : f
-        ));
-        simulateUpload(id);
+    const removeFile = (id: string, isVideo: boolean = false) => {
+        if (isVideo) {
+            setVideoFiles(prev => {
+                const file = prev.find(f => f.id === id);
+                if (file) {
+                    URL.revokeObjectURL(file.preview);
+                }
+                return prev.filter(f => f.id !== id);
+            });
+        } else {
+            setAudioFiles(prev => {
+                const file = prev.find(f => f.id === id);
+                if (file) {
+                    URL.revokeObjectURL(file.preview);
+                }
+                return prev.filter(f => f.id !== id);
+            });
+        }
+    };
+
+    const retryUpload = (id: string, isVideo: boolean = false) => {
+        if (isVideo) {
+            setVideoFiles(prev => prev.map(f =>
+                f.id === id ? { ...f, uploadProgress: 0, status: 'uploading' } : f
+            ));
+            simulateUpload(id, true);
+        } else {
+            setAudioFiles(prev => prev.map(f =>
+                f.id === id ? { ...f, uploadProgress: 0, status: 'uploading' } : f
+            ));
+            simulateUpload(id, false);
+        }
     };
 
     const updateEpisodeData = (field: keyof EpisodeData, value: any) => {
@@ -192,6 +340,7 @@ const NewEpisodeUpload: React.FC = () => {
             ...episodeData,
             status,
             audioFiles: audioFiles.filter(f => f.status === 'completed'),
+            videoFiles: videoFiles.filter(f => f.status === 'completed'),
             createdAt: new Date().toISOString()
         };
 
@@ -206,10 +355,7 @@ const NewEpisodeUpload: React.FC = () => {
             fontFamily: 'Satoshi, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             padding: '2rem'
         }}>
-            <div style={{
-                maxWidth: '1000px',
-                margin: '0 auto'
-            }}>
+            <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
                 {/* Header */}
                 <div style={{
                     display: 'flex',
@@ -227,16 +373,12 @@ const NewEpisodeUpload: React.FC = () => {
                         }}>
                             Upload New Episode
                         </h1>
-                        <p style={{
-                            color: '#6C757D',
-                            margin: 0,
-                            fontSize: '1rem'
-                        }}>
+                        <p style={{ color: '#6C757D', margin: 0, fontSize: '1rem' }}>
                             Add your audio content and episode details
                         </p>
                     </div>
                     <button
-                        onClick={() => window.history.back()}
+                        onClick={onNavigateToDashboard || (() => window.history.back())}
                         style={{
                             padding: '0.75rem 1.5rem',
                             backgroundColor: 'white',
@@ -253,11 +395,7 @@ const NewEpisodeUpload: React.FC = () => {
                     </button>
                 </div>
 
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 400px',
-                    gap: '2rem'
-                }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '2rem' }}>
                     {/* Main Content */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                         {/* Audio Upload Section */}
@@ -278,7 +416,6 @@ const NewEpisodeUpload: React.FC = () => {
                                 Upload Audio Files
                             </h2>
 
-                            {/* Drop Zone */}
                             <div
                                 onDrop={handleDrop}
                                 onDragOver={handleDragOver}
@@ -295,12 +432,7 @@ const NewEpisodeUpload: React.FC = () => {
                                     marginBottom: '2rem'
                                 }}
                             >
-                                <div style={{
-                                    fontSize: '3rem',
-                                    marginBottom: '1rem'
-                                }}>
-                                    🎵
-                                </div>
+                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎵</div>
                                 <h3 style={{
                                     fontFamily: 'Satoshi, sans-serif',
                                     fontSize: '1.25rem',
@@ -310,11 +442,7 @@ const NewEpisodeUpload: React.FC = () => {
                                 }}>
                                     Drag & drop your audio files here
                                 </h3>
-                                <p style={{
-                                    color: '#6C757D',
-                                    margin: '0 0 1rem 0',
-                                    fontSize: '1rem'
-                                }}>
+                                <p style={{ color: '#6C757D', margin: '0 0 1rem 0', fontSize: '1rem' }}>
                                     or click to browse your computer
                                 </p>
                                 <div style={{
@@ -340,7 +468,6 @@ const NewEpisodeUpload: React.FC = () => {
                                 style={{ display: 'none' }}
                             />
 
-                            {/* Uploaded Files */}
                             {audioFiles.length > 0 && (
                                 <div>
                                     <h3 style={{
@@ -353,11 +480,7 @@ const NewEpisodeUpload: React.FC = () => {
                                         Uploaded Files ({audioFiles.length})
                                     </h3>
 
-                                    <div style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '1rem'
-                                    }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                         {audioFiles.map((audioFile) => (
                                             <div
                                                 key={audioFile.id}
@@ -414,7 +537,6 @@ const NewEpisodeUpload: React.FC = () => {
                                                         </span>
                                                     </div>
 
-                                                    {/* Progress Bar */}
                                                     {audioFile.status === 'uploading' && (
                                                         <div style={{
                                                             width: '100%',
@@ -433,14 +555,10 @@ const NewEpisodeUpload: React.FC = () => {
                                                     )}
                                                 </div>
 
-                                                <div style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5rem'
-                                                }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                     {audioFile.status === 'error' && (
                                                         <button
-                                                            onClick={() => retryUpload(audioFile.id)}
+                                                            onClick={() => retryUpload(audioFile.id, false)}
                                                             style={{
                                                                 padding: '0.5rem',
                                                                 backgroundColor: '#4285F4',
@@ -456,7 +574,207 @@ const NewEpisodeUpload: React.FC = () => {
                                                     )}
 
                                                     <button
-                                                        onClick={() => removeFile(audioFile.id)}
+                                                        onClick={() => removeFile(audioFile.id, false)}
+                                                        style={{
+                                                            background: 'none',
+                                                            border: 'none',
+                                                            color: '#DC3545',
+                                                            cursor: 'pointer',
+                                                            fontSize: '1.2rem',
+                                                            padding: '0.25rem'
+                                                        }}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Video Upload Section */}
+                        <div style={{
+                            backgroundColor: 'white',
+                            borderRadius: '12px',
+                            padding: '2rem',
+                            border: '1px solid #E8E8E8',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                        }}>
+                            <h2 style={{
+                                fontFamily: 'Satoshi, sans-serif',
+                                fontSize: '1.25rem',
+                                fontWeight: '600',
+                                color: '#212529',
+                                margin: '0 0 1rem 0'
+                            }}>
+                                Upload Video Files (Optional)
+                            </h2>
+
+                            <div
+                                onDrop={handleVideoDrop}
+                                onDragOver={handleVideoDragOver}
+                                onDragLeave={handleVideoDragLeave}
+                                onClick={() => videoInputRef.current?.click()}
+                                style={{
+                                    border: videoDragActive ? '3px dashed #9C27B0' : '2px dashed #CED4DA',
+                                    borderRadius: '12px',
+                                    padding: '3rem 2rem',
+                                    textAlign: 'center',
+                                    cursor: 'pointer',
+                                    backgroundColor: videoDragActive ? '#F3E5F5' : '#FAFAFA',
+                                    transition: 'all 0.3s ease',
+                                    marginBottom: '2rem'
+                                }}
+                            >
+                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎬</div>
+                                <h3 style={{
+                                    fontFamily: 'Satoshi, sans-serif',
+                                    fontSize: '1.25rem',
+                                    fontWeight: '600',
+                                    color: '#212529',
+                                    margin: '0 0 0.5rem 0'
+                                }}>
+                                    Drag & drop your video files here
+                                </h3>
+                                <p style={{ color: '#6C757D', margin: '0 0 1rem 0', fontSize: '1rem' }}>
+                                    or click to browse your computer
+                                </p>
+                                <div style={{
+                                    fontSize: '0.875rem',
+                                    color: '#495057',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    gap: '2rem',
+                                    flexWrap: 'wrap'
+                                }}>
+                                    <span>✓ MP4, MOV, AVI, MKV</span>
+                                    <span>✓ Max 2GB per file</span>
+                                    <span>✓ Multiple files supported</span>
+                                </div>
+                            </div>
+
+                            <input
+                                ref={videoInputRef}
+                                type="file"
+                                accept="video/*"
+                                multiple
+                                onChange={handleVideoSelect}
+                                style={{ display: 'none' }}
+                            />
+
+                            {videoFiles.length > 0 && (
+                                <div>
+                                    <h3 style={{
+                                        fontFamily: 'Satoshi, sans-serif',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        color: '#212529',
+                                        margin: '0 0 1rem 0'
+                                    }}>
+                                        Uploaded Videos ({videoFiles.length})
+                                    </h3>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {videoFiles.map((videoFile) => (
+                                            <div
+                                                key={videoFile.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    padding: '1rem',
+                                                    backgroundColor: '#F8F9FA',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #E8E8E8'
+                                                }}
+                                            >
+                                                <div style={{
+                                                    width: '80px',
+                                                    height: '60px',
+                                                    borderRadius: '8px',
+                                                    backgroundColor: '#9C27B0',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    marginRight: '1rem',
+                                                    fontSize: '1.5rem',
+                                                    backgroundImage: videoFile.thumbnail ? `url(${videoFile.thumbnail})` : 'none',
+                                                    backgroundSize: 'cover',
+                                                    backgroundPosition: 'center',
+                                                    color: 'white'
+                                                }}>
+                                                    {!videoFile.thumbnail && '🎬'}
+                                                </div>
+
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{
+                                                        fontFamily: 'Satoshi, sans-serif',
+                                                        fontSize: '0.9rem',
+                                                        fontWeight: '600',
+                                                        color: '#212529',
+                                                        marginBottom: '0.25rem'
+                                                    }}>
+                                                        {videoFile.file.name}
+                                                    </div>
+
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        gap: '1rem',
+                                                        fontSize: '0.8rem',
+                                                        color: '#6C757D',
+                                                        marginBottom: '0.5rem'
+                                                    }}>
+                                                        <span>🎬 {videoFile.duration}</span>
+                                                        <span>💾 {videoFile.size}</span>
+                                                        <span style={{
+                                                            color: videoFile.status === 'completed' ? '#1A8C67' :
+                                                                videoFile.status === 'error' ? '#DC3545' : '#9C27B0'
+                                                        }}>
+                                                            {videoFile.status === 'uploading' && '⏳ Uploading...'}
+                                                            {videoFile.status === 'completed' && '✅ Completed'}
+                                                            {videoFile.status === 'error' && '❌ Error'}
+                                                        </span>
+                                                    </div>
+
+                                                    {videoFile.status === 'uploading' && (
+                                                        <div style={{
+                                                            width: '100%',
+                                                            height: '6px',
+                                                            backgroundColor: '#E8E8E8',
+                                                            borderRadius: '3px',
+                                                            overflow: 'hidden'
+                                                        }}>
+                                                            <div style={{
+                                                                width: `${videoFile.uploadProgress}%`,
+                                                                height: '100%',
+                                                                backgroundColor: '#9C27B0',
+                                                                transition: 'width 0.3s ease'
+                                                            }} />
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    {videoFile.status === 'error' && (
+                                                        <button
+                                                            onClick={() => retryUpload(videoFile.id, true)}
+                                                            style={{
+                                                                padding: '0.5rem',
+                                                                backgroundColor: '#9C27B0',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.8rem'
+                                                            }}
+                                                        >
+                                                            Retry
+                                                        </button>
+                                                    )}
+
+                                                    <button
+                                                        onClick={() => removeFile(videoFile.id, true)}
                                                         style={{
                                                             background: 'none',
                                                             border: 'none',
@@ -494,11 +812,7 @@ const NewEpisodeUpload: React.FC = () => {
                                 Episode Details
                             </h2>
 
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '1.5rem'
-                            }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 <div>
                                     <label style={{
                                         display: 'block',
@@ -569,11 +883,7 @@ const NewEpisodeUpload: React.FC = () => {
                                     }}>
                                         Tags
                                     </label>
-                                    <div style={{
-                                        display: 'flex',
-                                        gap: '0.5rem',
-                                        marginBottom: '1rem'
-                                    }}>
+                                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                                         <input
                                             type="text"
                                             placeholder="Add tags (press Enter)"
@@ -613,11 +923,7 @@ const NewEpisodeUpload: React.FC = () => {
                                     </div>
 
                                     {episodeData.tags.length > 0 && (
-                                        <div style={{
-                                            display: 'flex',
-                                            flexWrap: 'wrap',
-                                            gap: '0.5rem'
-                                        }}>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                                             {episodeData.tags.map((tag, index) => (
                                                 <span
                                                     key={index}
@@ -657,11 +963,7 @@ const NewEpisodeUpload: React.FC = () => {
                     </div>
 
                     {/* Sidebar */}
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '1.5rem'
-                    }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         {/* Publishing Options */}
                         <div style={{
                             backgroundColor: 'white',
@@ -680,11 +982,7 @@ const NewEpisodeUpload: React.FC = () => {
                                 Publishing
                             </h3>
 
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '1rem'
-                            }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 <div>
                                     <label style={{
                                         display: 'block',
@@ -764,11 +1062,7 @@ const NewEpisodeUpload: React.FC = () => {
                                 Actions
                             </h3>
 
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '0.75rem'
-                            }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 <button
                                     onClick={() => handleSave('draft')}
                                     style={{
@@ -828,7 +1122,7 @@ const NewEpisodeUpload: React.FC = () => {
                         </div>
 
                         {/* Upload Progress Summary */}
-                        {audioFiles.length > 0 && (
+                        {(audioFiles.length > 0 || videoFiles.length > 0) && (
                             <div style={{
                                 backgroundColor: 'white',
                                 borderRadius: '12px',
@@ -846,19 +1140,25 @@ const NewEpisodeUpload: React.FC = () => {
                                     Upload Summary
                                 </h3>
 
-                                <div style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '0.75rem'
-                                }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                     <div style={{
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         fontSize: '0.875rem',
                                         fontFamily: 'Satoshi, sans-serif'
                                     }}>
-                                        <span style={{ color: '#6C757D' }}>Total Files:</span>
+                                        <span style={{ color: '#6C757D' }}>Audio Files:</span>
                                         <span style={{ fontWeight: '500', color: '#212529' }}>{audioFiles.length}</span>
+                                    </div>
+
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        fontSize: '0.875rem',
+                                        fontFamily: 'Satoshi, sans-serif'
+                                    }}>
+                                        <span style={{ color: '#6C757D' }}>Video Files:</span>
+                                        <span style={{ fontWeight: '500', color: '#212529' }}>{videoFiles.length}</span>
                                     </div>
 
                                     <div style={{
@@ -869,7 +1169,7 @@ const NewEpisodeUpload: React.FC = () => {
                                     }}>
                                         <span style={{ color: '#6C757D' }}>Completed:</span>
                                         <span style={{ fontWeight: '500', color: '#1A8C67' }}>
-                                            {audioFiles.filter(f => f.status === 'completed').length}
+                                            {audioFiles.filter(f => f.status === 'completed').length + videoFiles.filter(f => f.status === 'completed').length}
                                         </span>
                                     </div>
 
@@ -881,11 +1181,11 @@ const NewEpisodeUpload: React.FC = () => {
                                     }}>
                                         <span style={{ color: '#6C757D' }}>Uploading:</span>
                                         <span style={{ fontWeight: '500', color: '#4285F4' }}>
-                                            {audioFiles.filter(f => f.status === 'uploading').length}
+                                            {audioFiles.filter(f => f.status === 'uploading').length + videoFiles.filter(f => f.status === 'uploading').length}
                                         </span>
                                     </div>
 
-                                    {audioFiles.some(f => f.status === 'error') && (
+                                    {(audioFiles.some(f => f.status === 'error') || videoFiles.some(f => f.status === 'error')) && (
                                         <div style={{
                                             display: 'flex',
                                             justifyContent: 'space-between',
@@ -894,7 +1194,7 @@ const NewEpisodeUpload: React.FC = () => {
                                         }}>
                                             <span style={{ color: '#6C757D' }}>Errors:</span>
                                             <span style={{ fontWeight: '500', color: '#DC3545' }}>
-                                                {audioFiles.filter(f => f.status === 'error').length}
+                                                {audioFiles.filter(f => f.status === 'error').length + videoFiles.filter(f => f.status === 'error').length}
                                             </span>
                                         </div>
                                     )}
@@ -909,7 +1209,10 @@ const NewEpisodeUpload: React.FC = () => {
                                     }}>
                                         <span style={{ color: '#6C757D' }}>Total Size:</span>
                                         <span style={{ fontWeight: '600', color: '#212529' }}>
-                                            {formatFileSize(audioFiles.reduce((total, f) => total + f.file.size, 0))}
+                                            {formatFileSize(
+                                                audioFiles.reduce((total, f) => total + f.file.size, 0) +
+                                                videoFiles.reduce((total, f) => total + f.file.size, 0)
+                                            )}
                                         </span>
                                     </div>
                                 </div>
@@ -948,6 +1251,9 @@ const NewEpisodeUpload: React.FC = () => {
                                     Use high-quality audio (44.1kHz, 16-bit minimum)
                                 </li>
                                 <li style={{ marginBottom: '0.5rem' }}>
+                                    For videos, use 1080p or higher resolution
+                                </li>
+                                <li style={{ marginBottom: '0.5rem' }}>
                                     Write compelling titles and descriptions
                                 </li>
                                 <li style={{ marginBottom: '0.5rem' }}>
@@ -957,7 +1263,7 @@ const NewEpisodeUpload: React.FC = () => {
                                     Consider scheduling releases for consistent timing
                                 </li>
                                 <li>
-                                    Upload cover art for better visual appeal
+                                    Video content can boost engagement and reach
                                 </li>
                             </ul>
                         </div>

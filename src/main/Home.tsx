@@ -1,6 +1,10 @@
 
 import React from "react";
 import { useAuth0 } from "@auth0/auth0-react";
+import './style.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min';
+
 
 function Home() {
     const { loginWithRedirect } = useAuth0();

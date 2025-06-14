@@ -7,6 +7,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min';
 
 
 function Home() {
+    console.log("✅ Home.tsx rendered");
     const { loginWithRedirect } = useAuth0();
 
     return (

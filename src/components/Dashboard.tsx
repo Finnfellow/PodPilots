@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import ImageUpload from './ImageUpload';
 import { userService, type UserProfile, type PodcastMetadata } from '../utils/cloudStorage';
 import {useNavigate} from "react-router-dom";
-
+import { useAuth0 } from "@auth0/auth0-react";
 
 
 interface Episode {
@@ -45,7 +45,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     //   totalEpisodes: 5,
     // totalPlays: 247,
     //  rssUrl: 'https://podpilot.com/feeds/your-podcast.xml'
-
+    const { logout } = useAuth0();
     //  });
     const [tagInput, setTagInput] = useState('');
 
@@ -353,8 +353,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                         </div>
                     </div>
                 </div>
-            </header>
 
+                <button
+                    onClick={() =>
+                        logout({ logoutParams: { returnTo: window.location.origin } })
+                    }
+                    style={{
+                        padding: "0.65rem 1.25rem",
+                        backgroundColor: "#F8F9FF",
+                        color: "#4285F4",
+                        border: "1px solid #4285F4",
+                        borderRadius: "6px",
+                        fontFamily: "Satoshi, sans-serif",
+                        fontWeight: 500,
+                        cursor: "pointer",
+                    }}
+                >
+                    Log&nbsp;out
+                </button>
+            </header>
             {/* Main Content */}
             <main
                 style={

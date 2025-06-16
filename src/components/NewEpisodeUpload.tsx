@@ -326,15 +326,15 @@ const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboa
     };
 
     const handleSave = (status: 'draft' | 'scheduled' | 'published') => {
-        if (!episodeData.title.trim()) {
-            alert('Please enter an episode title');
-            return;
-        }
-
-        if (audioFiles.length === 0 || !audioFiles.some(f => f.status === 'completed')) {
-            alert('Please upload at least one audio file');
-            return;
-        }
+        // if (!episodeData.title.trim()) {
+        //     alert('Please enter an episode title');
+        //     return;
+        // }
+        //
+        // if (audioFiles.length === 0 || !audioFiles.some(f => f.status === 'completed')) {
+        //     alert('Please upload at least one audio file');
+        //     return;
+        // }
 
         const episode = {
             ...episodeData,

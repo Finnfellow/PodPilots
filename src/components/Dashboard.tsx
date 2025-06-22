@@ -4,6 +4,13 @@ import ImageUpload from './ImageUpload';
 import { userService, type UserProfile, type PodcastMetadata } from '../utils/cloudStorage';
 import {useNavigate} from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
+import {uploadAvatar, uploadPodcastLogo} from "../config/supabaseUploads.ts";
+import{supabase} from "../config/database.ts";
+import {useSession} from "../config/hooks/useSession.ts";
+
+
+
+
 
 
 interface Episode {
@@ -30,7 +37,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'episodes'>('overview');
     const navigate = useNavigate();
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-    const [podcastMetadata, setPodcastMetadata] = useState<PodcastMetadata | null>(null);
+    const [podcast_metadata, setPodcast_metadata] = useState<PodcastMetadata | null>(null);
     const [isEditingMetadata, setIsEditingMetadata] = useState(false);
     const [showWelcome, setShowWelcome] = useState(false);
     const [editForm, setEditForm] = useState({
@@ -40,11 +47,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     });
 
 
-    // Mock data - replace with real data from your backend
-    //const [stats] = useState<PodcastStats>({
-    //   totalEpisodes: 5,
-    // totalPlays: 247,
-    //  rssUrl: 'https://podpilot.com/feeds/your-podcast.xml'
     const { logout } = useAuth0();
     //  });
     const [tagInput, setTagInput] = useState('');
@@ -86,13 +88,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         const metadata = userService.getPodcastMetadata();
 
         setUserProfile(profile);
-        setPodcastMetadata(metadata);
+        setPodcast_metadata(metadata);
 
         if (metadata) {
             setEditForm({
                 name: metadata.name,
                 description: metadata.description,
-                tags: metadata.tags
+                tags: metadata.tag
             });
 
         }
@@ -113,28 +115,40 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         totalPlays: recentEpisodes.reduce((total, episode) =>
             total + (episode.status === 'published' ? Math.floor(Math.random() * 100) + 10 : 0), 0
         ),
-        rssUrl: `https://podpilot.com/feeds/${podcastMetadata?.name?.toLowerCase().replace(/\s+/g, '-') || 'your-podcast'}.xml`
+        rssUrl: `https://podpilot.com/feeds/${podcast_metadata?.name?.toLowerCase().replace(/\s+/g, '-') || 'your-podcast'}.xml`
     };
+    const { user } = useAuth0();
 
-    const handleAvatarUpload = async (file: File, _previewUrl: string) => {
+    const handleAvatarUpload = async (file: File) => {
+        const {
+            data: { session = useSession() },
+        } = await supabase.auth.getSession();
+
+        const userId = session?.user.id;
+
+        if (!userId) {
+            console.error('User not authenticated');
+            return;
+        }
+
         try {
-            await userService.uploadUserAvatar(file);
-            const updatedProfile = userService.getUserProfile();
-            setUserProfile(updatedProfile);
+            const avatarUrl = await uploadAvatar(file);
+            setUserProfile((prev) => (prev ? { ...prev, avatarUrl } : prev));
         } catch (error) {
             console.error('Avatar upload failed:', error);
-            throw error;
         }
     };
 
-    const handleLogoUpload = async (file: File, _previewUrl: string) => {
+    const handleLogoUpload = async (file: File) => {
+        if (!user?.sub) {
+            console.error('User not authenticated');
+            return;
+        }
         try {
-            await userService.uploadPodcastLogo(file);
-            const updatedMetadata = userService.getPodcastMetadata();
-            setPodcastMetadata(updatedMetadata);
+            const logoUrl = await uploadPodcastLogo(file, user.sub);
+            setPodcast_metadata(prev => prev ? { ...prev, logo_url: logoUrl } : prev);
         } catch (error) {
             console.error('Logo upload failed:', error);
-            throw error;
         }
     };
 
@@ -153,29 +167,57 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         updateMetadata('tags', editForm.tags.filter(tag => tag !== tagToRemove));
     };
 
-    const saveMetadata = () => {
+    const saveMetadata = async () => {
+        if (!user?.sub) {
+            console.error('User not authenticated');
+            return;
+        }
+
+        // 1️⃣ Build the object you use in React-state / localStorage
         const updatedMetadata: PodcastMetadata = {
-            name: editForm.name,
+            name:        editForm.name,
             description: editForm.description,
-            tags: editForm.tags,
-            logoUrl: podcastMetadata?.logoUrl || undefined,
-            logoPublicId: podcastMetadata?.logoPublicId || undefined,
-            createdAt: podcastMetadata?.createdAt || new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            tag:        editForm.tags,
+            logo_url:     podcast_metadata?.logo_url        || '',
+            logo_public_id:podcast_metadata?.logo_public_id   || '',
+            created_at:   podcast_metadata?.created_at      || new Date().toISOString(),
+            updated_at:   new Date().toISOString(),
+            user_id:      user.sub                        // <- camelCase for frontend
         };
 
-        localStorage.setItem('podcastMetadata', JSON.stringify(updatedMetadata));
-        setPodcastMetadata(updatedMetadata);
-        setIsEditingMetadata(false);
-    };
+        try {
+            // ✅ Type-safe snake_case transform
+            const { user_id, ...rest } = updatedMetadata;
+            const supabasePayload = {
+                ...rest,
+                user_id: user_id
+            };
 
+            // 3️⃣ Upsert using the DB column names
+            const { error } = await supabase
+                .from('podcast_metadata')
+                .upsert([supabasePayload], { onConflict: 'user_id' });
+            console.log('Payload sent to Supabase:', supabasePayload);
+
+            if (error) throw error;
+
+            // 4️⃣ Persist locally & update UI state
+            localStorage.setItem('podcastMetadata', JSON.stringify(updatedMetadata));
+            setPodcast_metadata(updatedMetadata);
+            setIsEditingMetadata(false);
+        } catch (err) {
+            console.error('Failed to save podcast metadata:', err);
+        }
+    };
     const cancelEdit = () => {
-        if (podcastMetadata) {
+        if (podcast_metadata) {
             setEditForm({
-                name: podcastMetadata.name,
-                description: podcastMetadata.description,
-                tags: podcastMetadata.tags
+                name: podcast_metadata.name,
+                description: podcast_metadata.description,
+                tags: podcast_metadata.tag
             });
+        } else {
+            setEditForm({ name: '', description: '', tags: [] });
         }
         setIsEditingMetadata(false);
     };
@@ -279,7 +321,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                             color: '#212529',
                             margin: 0
                         }}>
-                            {podcastMetadata?.name || 'PodPilot'}
+                            {podcast_metadata?.name || 'PodPilot'}
                         </h1>
 
                         <nav style={{ display: 'flex', gap: '1.5rem' }}>
@@ -335,7 +377,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                             width: '2.5rem',
                             height: '2.5rem',
                             borderRadius: '50%',
-                            backgroundColor: userProfile?.avatarUrl ? 'transparent' : '#000000',
+                            backgroundColor: podcast_metadata?.avatar_url ? 'transparent' : '#000000',
                             backgroundImage: userProfile?.avatarUrl ? `url(${userProfile.avatarUrl})` : 'none',
                             backgroundSize: 'cover',
                             backgroundPosition: 'center',
@@ -413,7 +455,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                         margin: 0,
                                         fontFamily: 'Satoshi, sans-serif'
                                     }}>
-                                        {podcastMetadata?.description || 'Upload episodes, manage your RSS feed, and let listeners discover your content.'}
+                                        {podcast_metadata?.description || 'Upload episodes, manage your RSS feed, and let listeners discover your content.'}
                                     </p>
                                 </div>
                                 <button
@@ -471,7 +513,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                         Podcast Logo
                                     </h3>
                                     <ImageUpload
-                                        currentImage={podcastMetadata?.logoUrl}
+                                        currentImage={podcast_metadata?.logo_url}
                                         onImageUpload={handleLogoUpload}
                                         type="podcast"
                                         size="md"
@@ -617,7 +659,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                 </div>
                             ) : (
                                 <>
-                                    {podcastMetadata?.tags && podcastMetadata.tags.length > 0 && (
+                                    {podcast_metadata?.tag && podcast_metadata.tag.length > 0 && (
                                         <div style={{
                                             display: 'flex',
                                             flexWrap: 'wrap',
@@ -633,7 +675,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                             }}>
                                                 Tags:
                                             </span>
-                                            {podcastMetadata.tags.map((tag, index) => (
+                                            {podcast_metadata.tag.map((tag, index) => (
                                                 <span
                                                     key={index}
                                                     style={{

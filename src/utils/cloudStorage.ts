@@ -18,14 +18,16 @@ export interface UserProfile {
 }
 
 export interface PodcastMetadata {
-    id?: string;
+    user_id: string;
     name: string;
     description: string;
-    tags: string[];
-    logoUrl?: string;
-    logoPublicId?: string;
-    createdAt: string;
-    updatedAt?: string;
+    tag: string[];
+    logo_url?: string;
+    logo_public_id?: string;
+    created_at: string;
+    updated_at?: string;
+    avatar_url?: string;
+    avatar_public_id?: string;
 }
 
 // Cloud storage service using Supabase
@@ -198,14 +200,14 @@ export class UserService {
             const podcastMetadata = this.getPodcastMetadata();
             if (podcastMetadata) {
                 // Delete old logo if exists
-                if (podcastMetadata.logoPublicId) {
-                    await this.storageService.deleteImage(podcastMetadata.logoPublicId);
+                if (podcastMetadata.logo_public_id) {
+                    await this.storageService.deleteImage(podcastMetadata.logo_public_id);
                 }
 
                 // Update metadata
-                podcastMetadata.logoUrl = result.url;
-                podcastMetadata.logoPublicId = result.publicId;
-                podcastMetadata.updatedAt = new Date().toISOString();
+                podcastMetadata.logo_url = result.url;
+                podcastMetadata.logo_public_id = result.publicId;
+                podcastMetadata.updated_at = new Date().toISOString();
 
                 // Try to update database
                 try {
@@ -214,7 +216,7 @@ export class UserService {
                         .update({
                             logo_url: result.url,
                             logo_public_id: result.publicId,
-                            updated_at: podcastMetadata.updatedAt
+                            updated_at: podcastMetadata.updated_at
                         })
                         .eq('name', podcastMetadata.name); // Using name as identifier since id might not exist
                 } catch (dbError) {
@@ -254,10 +256,10 @@ export class UserService {
                 .insert([{
                     name: metadata.name,
                     description: metadata.description,
-                    tags: metadata.tags,
-                    logo_url: metadata.logoUrl,
-                    logo_public_id: metadata.logoPublicId,
-                    created_at: metadata.createdAt
+                    tags: metadata.tag,
+                    logo_url: metadata.logo_url,
+                    logo_public_id: metadata.logo_public_id,
+                    created_at: metadata.created_at
                 }]);
 
             if (error) {

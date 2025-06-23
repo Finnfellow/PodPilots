@@ -11,7 +11,7 @@ export interface UserProfile {
     id: string;
     username: string;
     email: string;
-    avatarUrl?: string;
+    avatarUrl?: string | null;
     avatarPublicId?: string;
     createdAt: string;
     updatedAt?: string;

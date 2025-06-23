@@ -5,7 +5,7 @@ import ImageUpload from './ImageUpload.tsx';
 import { uploadImage } from "../utils/uploadImages.ts";
 import { userService, type UserProfile, type PodcastMetadata } from '../utils/cloudStorage';
 import {useNavigate} from "react-router-dom";
-import { getPublicUrl } from "../supabaseClient";
+//import { getPublicUrl } from "../supabaseClient";
 import {sanitizeForStorage} from "../utils/sanatizefortorage.ts";
 //import { useAuth0 } from "@auth0/auth0-react";
 // import {uploadAvatar, uploadPodcastLogo} from "../config/supabaseUploads.ts";
@@ -36,24 +36,15 @@ interface DashboardProps {
     onNavigateToUpload?: () => void;
 }
 
+const getAvatarPublicUrl = (path: string): string => {
+    const { data } = supabase.storage.from("avatar.bucket").getPublicUrl(path);
+    return data?.publicUrl ?? "";
+};
 
-/*const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'episodes'>('overview');
-    const navigate = useNavigate();
-    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-    const [podcast_metadata, setPodcast_metadata] = useState<PodcastMetadata | null>(null);
-    const [isEditingMetadata, setIsEditingMetadata] = useState(false);
-    const [showWelcome, setShowWelcome] = useState(false);
-    const [editForm, setEditForm] = useState({
-        name: '',
-        description: '',
-        tags: [] as string[]
-    });*/
-
-/*const { logout } = useAuth0();
-    //  });
-    const [tagInput, setTagInput] = useState('');*/
-// const { user } = useAuth0();
+export const getLogoPublicUrl = (path: string): string => {
+    const { data } = supabase.storage.from("logo.bucket").getPublicUrl(path);
+    return data?.publicUrl ?? "";
+};
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'episodes'>('overview');
@@ -67,26 +58,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const [tagInput, setTagInput] = useState('');
     const [user, setUser] = useState<any>(null);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-    const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const [logoUrl] = useState<string | null>(null);
 
-    function loadImages() {
+    const loadImages = async () => {
         const avatarPath = localStorage.getItem('avatarPath');
         const logoPath = localStorage.getItem('logoPath');
 
         if (avatarPath) {
-            const url = getPublicUrl('avatar.bucket', avatarPath);
+            const url = getAvatarPublicUrl(avatarPath); // ✅ Using improved helper
             setAvatarUrl(url);
+            setPodcast_metadata((prev) =>
+                prev ? { ...prev, avatar_url: url } : prev
+            );
         }
 
         if (logoPath) {
-            const url = getPublicUrl('logo', logoPath);
-            setLogoUrl(url);
+            const url = getLogoPublicUrl(logoPath);
+            setPodcast_metadata(prev => prev ? { ...prev, logo_url: url } : prev);
         }
-    }
+    };
 
-    useEffect(() => {
-        loadImages();
-    }, []);
     const handleLogout = async () => {
         await supabase.auth.signOut();
         navigate("/");
@@ -166,31 +157,30 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         try {
             const userId = user?.id || user?.sub;
             if (!userId) throw new Error("User not authenticated");
+
             const safeName = sanitizeForStorage(file.name);
             const path = `avatars/${Date.now()}-${safeName}`;
             const url = await uploadImage(file, "avatar.bucket", path);
 
-            // ✅ Update local state
+            // ✅ Store the actual path in localStorage so it can be resolved later
+            localStorage.setItem("avatarPath", path); // <-- this is new
+
+            // ✅ Update state for immediate display
             setUserProfile((prev) =>
                 prev ? { ...prev, avatarUrl: url ?? undefined } : prev
             );
-
-
-            // ✅ Persist locally
-            localStorage.setItem("userProfile", JSON.stringify({
-                ...userProfile,
-                avatarUrl: url
-            }));
-
-            // ✅ Update in Supabase table
+            // ✅ Update the Supabase table
             const { error } = await supabase
                 .from("podcast_metadata")
-                .update({ avatar_url: url, updated_at: new Date().toISOString() })
+                .update({
+                    avatar_url: url,
+                    updated_at: new Date().toISOString()
+                })
                 .eq("user_id", userId);
 
             if (error) throw error;
 
-            console.log("✅ Avatar uploaded successfully");
+            console.log("✅ Avatar uploaded and saved successfully");
         } catch (err) {
             console.error("❌ Avatar upload failed:", err);
         }
@@ -200,16 +190,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
 
     const handleLogoUpload = async (file: File) => {
         try {
-            const url = await uploadImage(file, "logo", `logos/${Date.now()}-${file.name}`);
+            const safeName = sanitizeForStorage(file.name);
+            const path = `logos/${Date.now()}-${safeName}`;  // ✅ Safe + unique
+            const url = await uploadImage(file, "logo.bucket", path);
 
+            // ✅ Save path in localStorage for future retrieval
+            localStorage.setItem("logoPath", path);
 
-            // ✅ Update local podcast metadata state
+            // ✅ Update state
             setPodcast_metadata((prev) => ({
                 ...prev!,
                 logo_url: url ?? undefined,
             }));
 
-            // ✅ Persist in localStorage
+            // ✅ Update full metadata in localStorage
             localStorage.setItem(
                 "podcastMetadata",
                 JSON.stringify({
@@ -218,17 +212,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                 })
             );
 
-            // ✅ (Optional) Update Supabase table with new logo_url
+            // ✅ Optional: Update Supabase
             const { error } = await supabase
                 .from("podcast_metadata")
                 .update({ logo_url: url, updated_at: new Date().toISOString() })
                 .eq("user_id", user?.id);
 
-            if (error) {
-                throw error;
-            }
+            if (error) throw error;
 
-            console.log("✅ Logo URL saved to Supabase and local state");
+            console.log("✅ Logo uploaded and saved");
         } catch (error) {
             console.error("❌ Logo upload failed:", error);
         }
@@ -259,10 +251,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         const fetchUser = async () => {
             const { data } = await supabase.auth.getUser();
             setUser(data.user);
+
+            // ✅ Load avatar/logo from localStorage once user is known
+            await loadImages();
         };
 
         fetchUser();
-
 
 
 
@@ -517,8 +511,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                             width: '2.5rem',
                             height: '2.5rem',
                             borderRadius: '50%',
-                            backgroundColor: podcast_metadata?.avatar_url ? 'transparent' : '#000000',
-                            backgroundImage: podcast_metadata?.avatar_url ? `url(${podcast_metadata.avatar_url})` : 'none',
+                            backgroundColor: avatarUrl ? 'transparent' : '#000000',
+                            backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
                             backgroundSize: 'cover',
                             backgroundPosition: 'center',
                             display: 'flex',

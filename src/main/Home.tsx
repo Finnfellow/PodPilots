@@ -1,6 +1,9 @@
 
-import React from "react";
-import { useAuth0 } from "@auth0/auth0-react";
+/*import React from "react";
+import { useAuth0 } from "@auth0/auth0-react";*/
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient.ts";
 import './style.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
@@ -8,7 +11,40 @@ import 'bootstrap/dist/js/bootstrap.bundle.min';
 
 function Home() {
     console.log("✅ Home.tsx rendered");
-    const { loginWithRedirect } = useAuth0();
+    // const { loginWithRedirect } = useAuth0();
+
+    const navigate = useNavigate();
+    const [user, setUser] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const getSession = async () => {
+            const { data } = await supabase.auth.getSession();
+            const sessionUser = data.session?.user ?? null;
+            setUser(sessionUser);
+            setLoading(false);
+
+            if (sessionUser) {
+                navigate("/dashboard");
+            }
+        };
+        getSession();
+
+        const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+            const sessionUser = session?.user ?? null;
+            setUser(sessionUser);
+
+            if (sessionUser) {
+                navigate("/dashboard");
+            }
+        });
+
+        return () => {
+            listener.subscription.unsubscribe();
+        };
+    }, [navigate]);
+
+    if (loading) return null;
 
     return (
         <div className="container-fluid" style={{ "--bs-gutter-x": 0 } as React.CSSProperties}>
@@ -46,7 +82,53 @@ function Home() {
                             <li className="nav-item"><a className="nav-link" href="#">Contact</a></li>
                         </ul>
                         <div className="d-flex">
-                            <button
+                            {!user ? (
+                                <>
+                                    <button
+                                        id="loginButton"
+                                        className="btn btn-outline-success m-1"
+                                        onClick={async () => {
+                                            await supabase.auth.signInWithOAuth({
+                                                provider: 'google',
+                                                options: {
+                                                    redirectTo: window.location.origin + '/dashboard',
+                                                },
+                                            });
+                                        }}
+                                    >
+                                        Login
+                                    </button>
+
+                                    <button
+                                        id="signUpButton"
+                                        className="btn btn-outline-success m-1"
+                                        onClick={async () => {
+                                            await supabase.auth.signInWithOAuth({
+                                                provider: 'google',
+                                                options: {
+                                                    redirectTo: window.location.origin + '/onboarding',
+                                                },
+                                            });
+                                        }}
+                                    >
+                                        Sign Up
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="me-2 small text-muted">Logged in as {user.email}</span>
+                                    <button
+                                        className="btn btn-outline-secondary m-1"
+                                        onClick={async () => {
+                                            await supabase.auth.signOut();
+                                        }}
+                                    >
+                                        Log&nbsp;out
+                                    </button>
+                                </>
+                            )}
+
+                            {/*<button
                                 id="loginButton"
                                 className="btn btn-outline-success m-1"
                                 onClick={() => loginWithRedirect()}
@@ -62,7 +144,7 @@ function Home() {
                                 })}
                             >
                                 Sign Up
-                            </button>
+                            </button>*/}
                         </div>
                     </div>
                 </div>

@@ -5,6 +5,8 @@ import OnboardingFlow from "./components/OnboardingFlow.tsx";
 import Dashboard from "./components/Dashboard.tsx";
 import NewEpisodeUpload from "./components/NewEpisodeUpload.tsx";
 import Callback from "./components/CallBack.tsx";
+import ProtectedRoute from "../src/components/protectedRoute.tsx";
+
 
 function App() {
     return (
@@ -20,8 +22,16 @@ function App() {
                     />
                 }
             />
-            <Route path="/Dashboard" element={<Dashboard />} />
-            <Route path="/NewEpisodeUpload" element={<NewEpisodeUpload />} />
+            <Route path="/Dashboard" element={
+                <ProtectedRoute>
+                    <Dashboard />
+                </ProtectedRoute>
+            }/>
+            <Route path="/NewEpisodeUpload" element={
+                <ProtectedRoute>
+                    <NewEpisodeUpload />
+                </ProtectedRoute>
+            } />
             <Route path="/callback" element={<Callback />} />
         </Routes>
     );

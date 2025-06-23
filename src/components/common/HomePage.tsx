@@ -1,7 +1,5 @@
-//import React from "react";
-// import { useAuth0 } from "@auth0/auth0-react";
-import { useEffect, useState } from "react";
-import { supabase } from "../../supabaseClient.ts";
+import React from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 
 /**
  * Home/Landing page.
@@ -10,38 +8,16 @@ import { supabase } from "../../supabaseClient.ts";
  *   `Auth0ProviderWithNavigate` handles the redirect and navigation for us.
  */
 const HomePage: React.FC = () => {
-    /*const {
+    const {
         loginWithRedirect,
         logout,
         isAuthenticated,
         isLoading,
         user,
-    } = useAuth0();*/
+    } = useAuth0();
 
-        const [user, setUser] = useState<any>(null);
-        const [loading, setLoading] = useState(true);
-
-        useEffect(() => {
-            const getSession = async () => {
-                const { data } = await supabase.auth.getSession();
-                setUser(data.session?.user ?? null);
-                setLoading(false);
-            };
-            getSession();
-
-            const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-                setUser(session?.user ?? null);
-            });
-
-            return () => {
-                listener.subscription.unsubscribe();
-            };
-        }, []);
-
-
-        /* OPTIONAL: show nothing until SDK finishes booting */
-    //if (isLoading) return null;
-    if (loading) return null;
+    /* OPTIONAL: show nothing until SDK finishes booting */
+    if (isLoading) return null;
 
     return (
         <div className="container-fluid" style={{ ["--bs-gutter-x" as any]: 0 }}>
@@ -52,45 +28,7 @@ const HomePage: React.FC = () => {
                 </a>
 
                 <div className="ms-auto d-flex gap-2">
-                    {!user ? (
-                        <>
-                            <button
-                                className="btn btn-outline-primary"
-                                onClick={async () => {
-                                    await supabase.auth.signInWithOAuth({
-                                        provider: 'google',
-                                        options: { redirectTo: window.location.origin + '/Dashboard' }
-                                    });
-                                }}
-                            >
-                                Log&nbsp;in
-                            </button>
-
-                            <button
-                                className="btn btn-primary"
-                                onClick={async () => {
-                                    await supabase.auth.signInWithOAuth({
-                                        provider: 'google',
-                                        options: { redirectTo: window.location.origin + '/OnboardingFlow' }
-                                    });
-                                }}
-                            >
-                                Sign&nbsp;up
-                            </button>
-                        </>
-                    ) : (
-                        <button
-                            className="btn btn-outline-secondary"
-                            onClick={async () => {
-                                await supabase.auth.signOut();
-                            }}
-                        >
-                            Log&nbsp;out
-                        </button>
-                    )}
-
-
-                    {/*{!isAuthenticated ? (
+                    {!isAuthenticated ? (
                         <>
                             <button
                                 className="btn btn-outline-primary"
@@ -122,7 +60,7 @@ const HomePage: React.FC = () => {
                         >
                             Log&nbsp;out
                         </button>
-                    )}*/}
+                    )}
                 </div>
             </nav>
 
@@ -144,17 +82,11 @@ const HomePage: React.FC = () => {
             </div>
 
             {/* ---------- Debug (remove in production) ---------- */}
-            {user && (
+            {isAuthenticated && (
                 <pre className="mt-3 small text-muted">
-                Logged in as {user.email}
-            </pre>
+          Logged in as {user?.email || user?.name}
+        </pre>
             )}
-
-                {/*/*{isAuthenticated && (
-                <pre className="mt-3 small text-muted">
-                    Logged in as {user?.email || user?.name}
-                </pre>
-            )*/}
         </div>
     );
 };

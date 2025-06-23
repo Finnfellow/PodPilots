@@ -6,6 +6,7 @@ import { uploadImage } from "../utils/uploadImages.ts";
 import { userService, type UserProfile, type PodcastMetadata } from '../utils/cloudStorage';
 import {useNavigate} from "react-router-dom";
 import { getPublicUrl } from "../supabaseClient";
+import {sanitizeForStorage} from "../utils/sanatizefortorage.ts";
 //import { useAuth0 } from "@auth0/auth0-react";
 // import {uploadAvatar, uploadPodcastLogo} from "../config/supabaseUploads.ts";
 //import{supabase} from "../config/database.ts";
@@ -68,7 +69,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
+    function loadImages() {
+        const avatarPath = localStorage.getItem('avatarPath');
+        const logoPath = localStorage.getItem('logoPath');
 
+        if (avatarPath) {
+            const url = getPublicUrl('avatar.bucket', avatarPath);
+            setAvatarUrl(url);
+        }
+
+        if (logoPath) {
+            const url = getPublicUrl('logo', logoPath);
+            setLogoUrl(url);
+        }
+    }
+
+    useEffect(() => {
+        loadImages();
+    }, []);
     const handleLogout = async () => {
         await supabase.auth.signOut();
         navigate("/");
@@ -106,11 +124,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     ]);
 
     /*const handleAvatarUpload = async (file: File) => {
-        const {
-            data: { session = useSession() },
-        } = await supabase.auth.getSession();
-
+        const session = useSession();
         const userId = session?.user.id;
+
+        const claims = await getIdTokenClaims();
+        console.log('🔎 Raw ID Token:', claims?.__raw); // <-- check this in the console
+
+        const id_token = claims?.__raw;
+        if (!id_token) {
+            console.error("❌ No ID token");
+        }
 
         if (!userId) {
             console.error('User not authenticated');
@@ -141,38 +164,35 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     //new code
     const handleAvatarUpload = async (file: File) => {
         try {
-            const url = await uploadImage(file, "avatar", `avatars/${Date.now()}-${file.name}`);
+            const userId = user?.id || user?.sub;
+            if (!userId) throw new Error("User not authenticated");
+            const safeName = sanitizeForStorage(file.name);
+            const path = `avatars/${Date.now()}-${safeName}`;
+            const url = await uploadImage(file, "avatar.bucket", path);
 
-
-            // ✅ Update local podcast metadata state
-            setPodcast_metadata((prev) => ({
-                ...prev!,
-                avatar_url: url ?? undefined,
-
-            }));
-
-            // ✅ Persist in localStorage
-            localStorage.setItem(
-                "podcastMetadata",
-                JSON.stringify({
-                    ...podcast_metadata,
-                    avatar_url: url,
-                })
+            // ✅ Update local state
+            setUserProfile((prev) =>
+                prev ? { ...prev, avatarUrl: url ?? undefined } : prev
             );
 
-            // ✅ (Optional) Update Supabase table with new avatar_url
+
+            // ✅ Persist locally
+            localStorage.setItem("userProfile", JSON.stringify({
+                ...userProfile,
+                avatarUrl: url
+            }));
+
+            // ✅ Update in Supabase table
             const { error } = await supabase
                 .from("podcast_metadata")
                 .update({ avatar_url: url, updated_at: new Date().toISOString() })
-                .eq("user_id", user?.id);
+                .eq("user_id", userId);
 
-            if (error) {
-                throw error;
-            }
+            if (error) throw error;
 
-            console.log("✅ Avatar URL saved to Supabase and local state");
-        } catch (error) {
-            console.error("❌ Avatar upload failed:", error);
+            console.log("✅ Avatar uploaded successfully");
+        } catch (err) {
+            console.error("❌ Avatar upload failed:", err);
         }
     };
 
@@ -243,23 +263,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
 
         fetchUser();
 
-        // ✅ NEW: Load avatar and logo image URLs from Supabase
-        const loadImages = async () => {
-            const avatarPath = localStorage.getItem('avatarPath');
-            const logoPath = localStorage.getItem('logoPath');
 
-            if (avatarPath) {
-                const url = getPublicUrl('avatar', avatarPath);
-                setAvatarUrl(url);
-            }
 
-            if (logoPath) {
-                const url = getPublicUrl('logo', logoPath);
-                setLogoUrl(url);
-            }
-        };
 
-        loadImages();
 
 
         // Check if this is a fresh login (show welcome)

@@ -1,26 +1,19 @@
-import { supabase } from "../supabaseClient";
+// src/utils/uploadImage.ts
+import { supabase } from '../config/database.ts';
 
-/**
- * Uploads an image to the specified Supabase storage bucket and returns a public URL.
- * @param file - The image file to upload.
- * @param bucket - The Supabase storage bucket name ("avatar" or "logo").
- * @param path - The path inside the bucket (e.g. "avatars/filename.png").
- */
-export async function uploadImage(
+export const uploadImage = async (
     file: File,
-    bucket: "avatar" | "logo",
+    bucket: string,
     path: string
-): Promise<string | null> {
-    const { error } = await supabase.storage.from(bucket).upload(path, file, {
-        cacheControl: "3600",
-        upsert: true,
-    });
+): Promise<string | null> => {
+    const cleanPath = path.replace(/\s+/g, "_");
 
-    if (error) {
-        console.error("Upload failed:", error.message);
-        return null;
-    }
+    const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(cleanPath, file, { upsert: true });
 
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from(bucket).getPublicUrl(cleanPath);
     return data?.publicUrl || null;
-}
+};

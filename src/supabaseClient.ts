@@ -17,6 +17,6 @@ export async function uploadImageToSupabase(file: File, bucket: "avatar" | "logo
     return getPublicUrl(bucket, path); // ✅ Returns public URL
 }
 
-export function getPublicUrl(bucket: "avatar" | "logo", path: string): string {
+export function getPublicUrl(bucket: string, path: string): string {
     return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }

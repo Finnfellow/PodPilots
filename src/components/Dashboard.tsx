@@ -5,14 +5,9 @@ import ImageUpload from './ImageUpload.tsx';
 import { uploadImage } from "../utils/uploadImages.ts";
 import { userService, type UserProfile, type PodcastMetadata } from '../utils/cloudStorage';
 import {useNavigate} from "react-router-dom";
-//import { getPublicUrl } from "../supabaseClient";
 import {sanitizeForStorage} from "../utils/sanatizefortorage.ts";
-//import { useAuth0 } from "@auth0/auth0-react";
-// import {uploadAvatar, uploadPodcastLogo} from "../config/supabaseUploads.ts";
-//import{supabase} from "../config/database.ts";
-// import {useSession} from "../config/hooks/useSession.ts";
-//import { uploadImageToSupabase } from '../utils/supabaseUploads';
-// import { uploadImageToBucket } from "../supabaseClient";
+
+
 
 
 
@@ -54,16 +49,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const [isEditingMetadata, setIsEditingMetadata] = useState(false);
     const [showWelcome, setShowWelcome] = useState(false);
     const [editForm, setEditForm] = useState({ name: '', description: '', tags: [] as string[] });
-    //const { logout, user } = useAuth0();
     const [tagInput, setTagInput] = useState('');
     const [user, setUser] = useState<any>(null);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [logoUrl] = useState<string | null>(null);
+    const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
     const loadImages = async () => {
         const avatarPath = localStorage.getItem('avatarPath');
         const logoPath = localStorage.getItem('logoPath');
-
+        const videoPath = localStorage.getItem('videoPath');
         if (avatarPath) {
             const url = getAvatarPublicUrl(avatarPath); // ✅ Using improved helper
             setAvatarUrl(url);
@@ -75,6 +70,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         if (logoPath) {
             const url = getLogoPublicUrl(logoPath);
             setPodcast_metadata(prev => prev ? { ...prev, logo_url: url } : prev);
+        }
+        if (videoPath) {
+            const { data } = supabase.storage.from("video.bucket").getPublicUrl(videoPath);
+            setVideoUrl(data?.publicUrl ?? null);
         }
     };
 
@@ -114,44 +113,53 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         }
     ]);
 
-    /*const handleAvatarUpload = async (file: File) => {
-        const session = useSession();
-        const userId = session?.user.id;
-
-        const claims = await getIdTokenClaims();
-        console.log('🔎 Raw ID Token:', claims?.__raw); // <-- check this in the console
-
-        const id_token = claims?.__raw;
-        if (!id_token) {
-            console.error("❌ No ID token");
-        }
-
-        if (!userId) {
-            console.error('User not authenticated');
-            return;
-        }
-
+    const handleVideoUpload = async (file: File) => {
         try {
-            const avatarUrl = await uploadAvatar(file);
-            setUserProfile((prev) => (prev ? { ...prev, avatarUrl } : prev));
-        } catch (error) {
-            console.error('Avatar upload failed:', error);
+            const userId = user?.id;
+            if (!userId) throw new Error("User not authenticated");
+
+            const safeName = sanitizeForStorage(file.name);
+            const path = `videos/${Date.now()}-${safeName}`;
+
+            // ✅ Upload to the correct bucket
+            const { error: uploadError } = await supabase.storage
+                .from("video.bucket")
+                .upload(path, file, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            // ✅ Get public URL
+            const { data: publicData } = supabase.storage
+                .from("video.bucket")
+                .getPublicUrl(path);
+
+            const url = publicData?.publicUrl;
+
+            // ✅ Save to local state and localStorage
+            setVideoUrl(url);
+            localStorage.setItem("videoPath", path);
+
+            // ✅ Save metadata to video_uploads table
+            const { error: insertError } = await supabase
+                .from("video_uploads")
+                .insert([
+                    {
+                        user_id: userId,
+                        file_name: file.name,
+                        storage_path: path,
+                        public_url: url,
+                        file_size: file.size,
+                        uploaded_at: new Date().toISOString()
+                    }
+                ]);
+
+            if (insertError) throw insertError;
+
+            console.log("✅ Video uploaded and metadata saved");
+        } catch (err) {
+            console.error("❌ Video upload failed:", err);
         }
     };
-
-    const handleLogoUpload = async (file: File) => {
-        if (!user?.sub) {
-            console.error('User not authenticated');
-            return;
-        }
-        try {
-            const logoUrl = await uploadPodcastLogo(file, user.sub);
-            setPodcast_metadata(prev => prev ? { ...prev, logo_url: logoUrl } : prev);
-        } catch (error) {
-            console.error('Logo upload failed:', error);
-        }
-    };*/
-
     //new code
     const handleAvatarUpload = async (file: File) => {
         try {
@@ -607,7 +615,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                         margin: 0,
                                         fontFamily: 'Satoshi, sans-serif'
                                     }}>
-                                        {podcast_metadata?.description || 'Upload episodes, and let listeners discover your content.'}
+                                        {podcast_metadata?.description || 'Upload episodes, manage your RSS feed, and let listeners discover your content.'}
                                     </p>
                                 </div>
                                 <button
@@ -671,10 +679,67 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                         type="podcast"
                                         size="md"
                                     />
+                                </div>
+                                {videoUrl && (
+                                    <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                                        <h3 style={{
+                                            fontFamily: 'Satoshi, sans-serif',
+                                            fontSize: '1rem',
+                                            fontWeight: '500',
+                                            color: '#495057',
+                                            marginBottom: '1rem'
+                                        }}>
+                                            Uploaded Video Preview
+                                        </h3>
+                                        <video controls width="100%" style={{ maxWidth: '600px', borderRadius: '12px' }}>
+                                            <source src={videoUrl} type="video/mp4" />
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                )}          // ✅ this closes the conditional block
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <h3 style={{
+                                    fontFamily: 'Satoshi, sans-serif',
+                                    fontSize: '1rem',
+                                    fontWeight: '500',
+                                    color: '#495057',
+                                    marginBottom: '1rem'
+                                }}>
+                                    Upload a Promo Video
+                                </h3>
 
+                                <div
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        const file = e.dataTransfer.files?.[0];
+                                        if (file) handleVideoUpload(file);
+                                    }}
+                                    onDragOver={(e) => e.preventDefault()}
+                                    style={{
+                                        border: '2px dashed #CED4DA',
+                                        padding: '2rem',
+                                        borderRadius: '12px',
+                                        backgroundColor: '#FAFAFA',
+                                        cursor: 'pointer'
+                                    }}
+                                    onClick={() => document.getElementById('videoInput')?.click()}
+                                >
+                                    <p style={{ margin: 0, color: '#6C757D' }}>
+                                        Drag and drop your video file here, or click to select
+                                    </p>
+                                    <input
+                                        id="videoInput"
+                                        type="file"
+                                        accept="video/*"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) handleVideoUpload(file);
+                                        }}
+                                    />
                                 </div>
                             </div>
-
                             {isEditingMetadata ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '2rem' }}>
                                     <input
@@ -851,7 +916,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                 </>
                             )}
                             <p>
-                                Upload episodes, and let listeners discover your content.
+                                Upload episodes, manage , and let listeners discover your content.
                             </p>
 
                         </div>
@@ -921,7 +986,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                 </p>
                             </div>
 
-                            {/*<div style={{
+                            <div style={{
                                 backgroundColor: 'white',
                                 borderRadius: '8px',
                                 padding: '1.5rem',
@@ -974,7 +1039,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                         Copy URL
                                     </button>
                                 </div>
-                            </div>*/}
+                            </div>
                         </div>
 
                         {/* Recent Episodes */}
@@ -1041,26 +1106,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                         }}>
                           {episode.publishDate || 'Not published'}
                         </span>
-
-                                                {/*<span style={{
-                                               //     fontSize: '0.8rem',
-                                                 //   color: '#6C757D',
-                                             //       fontFamily: 'Satoshi, sans-serif'
-                                           //     }}>
-
-                                             //       {episode.publishDate || 'Not published'}
-                                               // </span>
-                                                //<span style={{
-                                                 //   fontSize: '0.8rem',
-                                                   // color: '#6C757D',
-                                                   // fontFamily: 'Satoshi, sans-serif'
-                                               // }}>
-                                              //      {episode.duration}
-                                              //  </span>
-
-
-                                          //  </span>*/}
-
                                                 {episode.status === 'published' && episode.audioFile && (
                                                     <audio
                                                         controls

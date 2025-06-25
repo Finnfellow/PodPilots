@@ -7,8 +7,8 @@ PodPilot is a streamlined podcast publishing and analytics dashboard designed to
 - Home page 
 - Create an account on Podpilot
 - Dashboard to show previous uploads
-- Upload a video to PodPilot
-- upload audio to rss feed 
+- Upload a video to PodPilot for playback
+
 
 
 ## Features

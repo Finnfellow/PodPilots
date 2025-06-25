@@ -607,7 +607,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                         margin: 0,
                                         fontFamily: 'Satoshi, sans-serif'
                                     }}>
-                                        {podcast_metadata?.description || 'Upload episodes, manage your RSS feed, and let listeners discover your content.'}
+                                        {podcast_metadata?.description || 'Upload episodes, and let listeners discover your content.'}
                                     </p>
                                 </div>
                                 <button
@@ -851,7 +851,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                 </>
                             )}
                             <p>
-                                Upload episodes, manage your RSS feed, and let listeners discover your content.
+                                Upload episodes, and let listeners discover your content.
                             </p>
 
                         </div>
@@ -921,7 +921,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                 </p>
                             </div>
 
-                            <div style={{
+                            {/*<div style={{
                                 backgroundColor: 'white',
                                 borderRadius: '8px',
                                 padding: '1.5rem',
@@ -974,7 +974,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                         Copy URL
                                     </button>
                                 </div>
-                            </div>
+                            </div>*/}
                         </div>
 
                         {/* Recent Episodes */}

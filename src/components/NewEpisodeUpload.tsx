@@ -36,7 +36,7 @@ interface NewEpisodeUploadProps {
 const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboard }) => {
     const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
     const [videoFiles, setVideoFiles] = useState<VideoFile[]>([]);
-    const [dragActive, setDragActive] = useState(false);
+    //const [dragActive, setDragActive] = useState(false);
     const [videoDragActive, setVideoDragActive] = useState(false);
     const [episodeData, setEpisodeData] = useState<EpisodeData>({
         title: '',
@@ -46,7 +46,7 @@ const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboa
         status: 'draft'
     });
     const [tagInput, setTagInput] = useState('');
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    //const fileInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
 
     const formatFileSize = (bytes: number): string => {
@@ -57,7 +57,7 @@ const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboa
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
-    const getAudioDuration = (file: File): Promise<string> => {
+    /*const getAudioDuration = (file: File): Promise<string> => {
         return new Promise((resolve) => {
             const audio = new Audio();
             audio.onloadedmetadata = () => {
@@ -72,7 +72,7 @@ const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboa
             };
             audio.src = URL.createObjectURL(file);
         });
-    };
+    };*/
 
     const getVideoDuration = (file: File): Promise<string> => {
         return new Promise((resolve) => {
@@ -154,7 +154,7 @@ const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboa
         });
     };
 
-    const handleFiles = async (files: FileList) => {
+    /*const handleFiles = async (files: FileList) => {
         const validFiles = Array.from(files).filter(file => {
             const isAudio = file.type.startsWith('audio/');
             const isValidSize = file.size <= 500 * 1024 * 1024;
@@ -190,7 +190,7 @@ const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboa
             setAudioFiles(prev => [...prev, audioFile]);
             simulateUpload(id, false);
         }
-    };
+    };*/
 
     const handleVideoFiles = async (files: FileList) => {
         const validFiles = Array.from(files).filter(file => {
@@ -232,21 +232,21 @@ const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboa
         }
     };
 
-    const handleDrop = (e: React.DragEvent) => {
+    /*const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setDragActive(false);
         handleFiles(e.dataTransfer.files);
-    };
+    };*/
 
-    const handleDragOver = (e: React.DragEvent) => {
+    /*const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         setDragActive(true);
-    };
+    };*/
 
-    const handleDragLeave = (e: React.DragEvent) => {
+    /*const handleDragLeave = (e: React.DragEvent) => {
         e.preventDefault();
         setDragActive(false);
-    };
+    };*/
 
     const handleVideoDrop = (e: React.DragEvent) => {
         e.preventDefault();
@@ -264,11 +264,11 @@ const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboa
         setVideoDragActive(false);
     };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    /*const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             handleFiles(e.target.files);
         }
-    };
+    };*/
 
     const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -399,7 +399,7 @@ const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboa
                     {/* Main Content */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                         {/* Audio Upload Section */}
-                        <div style={{
+                        {/*<div style={{
                             backgroundColor: 'white',
                             borderRadius: '12px',
                             padding: '2rem',
@@ -592,7 +592,7 @@ const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboa
                                     </div>
                                 </div>
                             )}
-                        </div>
+                        </div>*/}
 
                         {/* Video Upload Section */}
                         <div style={{
@@ -609,7 +609,7 @@ const NewEpisodeUpload: React.FC<NewEpisodeUploadProps> = ({ onNavigateToDashboa
                                 color: '#212529',
                                 margin: '0 0 1rem 0'
                             }}>
-                                Upload Video Files (Optional)
+                                Upload Video Files
                             </h2>
 
                             <div

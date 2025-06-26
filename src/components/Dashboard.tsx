@@ -19,6 +19,7 @@ interface Episode {
     duration: string;
     status: 'draft' | 'published';
     audioFile?: string;
+    videoUrl?: string;
 }
 
 interface PodcastStats {
@@ -54,6 +55,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [logoUrl] = useState<string | null>(null);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
+    const [recentVideos, setRecentVideos] = useState<
+        { name: string; createdAt: string; publicUrl: string}[]
+    >([]);
+
 
     const loadImages = async () => {
         const avatarPath = localStorage.getItem('avatarPath');
@@ -83,7 +88,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     };
 
     // Define recentEpisodes
-    const [recentEpisodes] = useState<Episode[]>([
+    const [recentEpisodes, setRecentEpisodes] = useState<Episode[]>([]);
+
+    /*const [recentEpisodes] = useState<Episode[]>([
         {
             id: '1',
             title: 'Welcome to My Podcast',
@@ -91,7 +98,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
             publishDate: '2025-05-28',
             duration: '12:34',
             status: 'published',
-            audioFile: 'welcome-episode.mp3'
+            //audioFile: 'welcome-episode.mp3',
+            videoUrl: "https://dxdshzscuxeqmhugilxt.supabase.co/storage/v1/object/public/video.bucket/videos/1750891296067-1750890286432-vecteezy_countdown-one-minute-animation-from-60-to-0-seconds_8976744.mp4"
         },
         {
             id: '2',
@@ -100,9 +108,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
             publishDate: '2025-06-01',
             duration: '18:22',
             status: 'published',
-            audioFile: 'episode-2.mp3'
+            //audioFile: 'episode-2.mp3',
+            videoUrl: "https://dxdshzscuxeqmhugilxt.supabase.co/storage/v1/object/public/video.bucket/videos/1750891296067-1750890286432-vecteezy_countdown-one-minute-animation-from-60-to-0-seconds_8976744.mp4"
         },
-        {
+        /!*{
             id: '3',
             title: 'Upcoming Episode',
             description: 'Working on the next episode...',
@@ -110,8 +119,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
             duration: '0:00',
             status: 'draft'
 
-        }
-    ]);
+        }*!/
+    ]);*/
 
     const handleVideoUpload = async (file: File) => {
         try {
@@ -234,6 +243,56 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         }
     };
 
+    const fetchRecentVideos = async () => {
+        const { data, error } = await supabase.storage
+            .from("video.bucket")
+            .list("videos", {
+                limit: 10,
+                sortBy: { column: "created_at", order: "desc" }
+            });
+
+        if (error) {
+            console.error("Error fetching videos:", error.message);
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            console.log("📭 No video files found in: videos/");
+            return;
+        }
+
+        const recent = data.slice(0, 3).map((file) => {
+            const { data: urlData } = supabase.storage
+                .from("video.bucket")
+                .getPublicUrl(`videos/${file.name}`);
+
+            return {
+                name: file.name,
+                createdAt: file.created_at,
+                publicUrl: urlData?.publicUrl
+            };
+        });
+
+        setRecentVideos(recent);
+        console.log("📦 Recent videos loaded:", recent);
+
+        const episodes = recent.map((vid, index) => ({
+            id: (index + 1).toString(),
+            title: `Episode ${index + 1}`,
+            description: 'Auto-generated episode from uploaded video',
+            publishDate: new Date().toISOString().split('T')[0],
+            duration: 'N/A',
+            status: 'published' as 'published',
+            videoUrl: vid.publicUrl,
+        }));
+
+        setRecentEpisodes(episodes);
+    };
+
+
+
+
+
 
 
     //end of new code
@@ -260,14 +319,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
             const { data } = await supabase.auth.getUser();
             setUser(data.user);
 
+            if (data.user?.id) {
+                await fetchRecentVideos();
+            }
+
+
             // ✅ Load avatar/logo from localStorage once user is known
             await loadImages();
         };
 
         fetchUser();
-
-
-
 
 
         // Check if this is a fresh login (show welcome)
@@ -383,6 +444,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const getInitials = (name: string) => {
         return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
     };
+
+    console.log("✅ Recent videos loaded:", recentVideos);
+
 
     return (
         <div style={{
@@ -696,7 +760,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                             Your browser does not support the video tag.
                                         </video>
                                     </div>
-                                )}          // ✅ this closes the conditional block
+                                )}
                             </div>
                             <div style={{ textAlign: 'center' }}>
                                 <h3 style={{
@@ -986,60 +1050,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                 </p>
                             </div>
 
-                            <div style={{
-                                backgroundColor: 'white',
-                                borderRadius: '8px',
-                                padding: '1.5rem',
-                                border: '1px solid #E8E8E8',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                            }}>
-                                <h3 style={{
-                                    fontFamily: 'Satoshi, sans-serif',
-                                    fontSize: '0.875rem',
-                                    fontWeight: '500',
-                                    color: '#6C757D',
-                                    margin: '0 0 0.5rem 0',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em'
-                                }}>
-                                    RSS Feed
-                                </h3>
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem'
-                                }}>
-                                    <span style={{
-                                        fontSize: '0.875rem',
-                                        color: '#212529',
-                                        fontFamily: 'Satoshi, sans-serif',
-                                        fontWeight: '500'
-                                    }}>
-                                        Active
-                                    </span>
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                await navigator.clipboard.writeText(stats.rssUrl);
-                                            } catch (err) {
-                                                console.error('Failed to copy RSS URL:', err);
-                                            }
-                                        }}
-                                        style={{
-                                            padding: '0.25rem 0.75rem',
-                                            fontSize: '0.75rem',
-                                            backgroundColor: '#F8F9FF',
-                                            color: '#4285F4',
-                                            border: '1px solid #4285F4',
-                                            borderRadius: '6px',
-                                            fontFamily: 'Satoshi, sans-serif',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        Copy URL
-                                    </button>
-                                </div>
-                            </div>
+
                         </div>
 
                         {/* Recent Episodes */}
@@ -1061,112 +1072,49 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                             </h2>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {recentEpisodes.map((episode: Episode) => (
+                                {recentVideos.map((video) => (
                                     <div
-                                        key={episode.id}
+                                        key={video.name}
                                         style={{
                                             display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
+                                            flexDirection: 'column',
+                                            gap: '0.5rem',
                                             padding: '1rem',
-                                            backgroundColor: '#FAFAFA',
+                                            backgroundColor: '#F9F9F9',
                                             borderRadius: '8px',
-                                            border: '1px solid #E8E8E8'
+                                            border: '1px solid #E8E8E8',
                                         }}
                                     >
-
-                                        <div style={{ flex: 1 }}>
-                                            <h3 style={{
-                                                fontFamily: 'Satoshi, sans-serif',
-                                                fontSize: '1rem',
-                                                fontWeight: '600',
-                                                color: '#212529',
-                                                margin: '0 0 0.25rem 0'
-                                            }}>
-                                                {episode.title}
-                                            </h3>
-                                            <p style={{
+                                        <video
+                                            width="100%"
+                                            height="auto"
+                                            controls
+                                            src={video.publicUrl}
+                                        />
+                                        <span
+                                            style={{
                                                 fontFamily: 'Satoshi, sans-serif',
                                                 fontSize: '0.875rem',
+                                                fontWeight: 600,
+                                                color: '#212529',
+                                            }}
+                                        >
+      {video.name}
+    </span>
+                                        <span
+                                            style={{
+                                                fontSize: '0.75rem',
                                                 color: '#6C757D',
-                                                margin: '0 0 0.5rem 0'
-                                            }}>
-                                                {episode.description}
-                                            </p>
-                                            <div style={{
-                                                display: 'flex',
-                                                gap: '1rem',
-                                                alignItems: 'center'
-                                            }}>
-
-                        <span style={{
-                            fontSize: '0.8rem',
-                            color: '#6C757D',
-                            fontFamily: 'Satoshi, sans-serif'
-                        }}>
-                          {episode.publishDate || 'Not published'}
-                        </span>
-                                                {episode.status === 'published' && episode.audioFile && (
-                                                    <audio
-                                                        controls
-                                                        style={{
-                                                            height: '30px',
-                                                            fontSize: '0.8rem'
-                                                        }}
-                                                    >
-                                                        <source src={`/audio/${episode.audioFile}`} type="audio/mpeg" />
-                                                        Your browser does not support the audio element.
-                                                    </audio>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'flex-end',
-                                            gap: '0.5rem'
-                                        }}>
-
-                                            <span style={{
-                                                padding: '0.25rem 0.75rem',
-                                                borderRadius: '20px',
-                                                fontSize: '0.75rem',
-                                                fontWeight: '500',
                                                 fontFamily: 'Satoshi, sans-serif',
-                                                backgroundColor: getStatusColor(episode.status) + '20',
-                                                color: getStatusColor(episode.status)
-                                            }}>
-                                                {getStatusText(episode.status)}
-                                            </span>
-
-                                            <span style={{
-                                                padding: '0.25rem 0.75rem',
-                                                borderRadius: '20px',
-                                                fontSize: '0.75rem',
-                                                fontWeight: '500',
-                                                fontFamily: 'Satoshi, sans-serif',
-                                                backgroundColor: getStatusColor(episode.status) + '20',
-                                                color: getStatusColor(episode.status)
-                                            }}>
-                        {getStatusText(episode.status)}
-                      </span>
-
-
-                                            <button style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                fontSize: '1.2rem',
-                                                cursor: 'pointer',
-                                                padding: '0.25rem',
-                                                color: '#6C757D'
-                                            }}>
-                                                ⋯
-                                            </button>
-                                        </div>
+                                            }}
+                                        >
+      Uploaded on {new Date(video.createdAt).toLocaleDateString()}
+    </span>
                                     </div>
                                 ))}
+
                             </div>
+
                         </div>
                     </div>
                 )}

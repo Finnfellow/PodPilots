@@ -6,6 +6,7 @@ import { uploadImage } from "../utils/uploadImages.ts";
 import { userService, type UserProfile, type PodcastMetadata } from '../utils/cloudStorage';
 import {useNavigate} from "react-router-dom";
 import {sanitizeForStorage} from "../utils/sanatizefortorage.ts";
+import '../main/style.css';
 
 
 
@@ -449,11 +450,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
 
 
     return (
-        <div style={{
-            minHeight: '100vh',
-            backgroundColor: '#FFFFFF',
-            fontFamily: 'Satoshi, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-        }}>
+        <div className={"mainReturn"}>
             {/* Welcome Toast */}
             {showWelcome && (
                 <div style={{
@@ -472,217 +469,98 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.75rem'
-                }}>
-                    <span style={{ fontSize: '1.25rem' }}>🎉</span>
-                    <div>
-                        <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
-                            Welcome to PodPilot, {userProfile?.username || 'Creator'}!
+                    }}>
+                        <span style={{ fontSize: '1.25rem' }}>🎉</span>
+                        <div>
+                            <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                                Welcome to PodPilot, {userProfile?.username || 'Creator'}!
+                            </div>
+                            <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
+                                Your podcast is ready for takeoff
+                            </div>
                         </div>
-                        <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
-                            Your podcast is ready for takeoff
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => setShowWelcome(false)}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'white',
-                            cursor: 'pointer',
-                            fontSize: '1.25rem',
-                            padding: '0.25rem',
-                            marginLeft: '0.5rem'
-                        }}
-                    >
-                        ×
-                    </button>
+                        <button
+                            onClick={() => setShowWelcome(false)}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'white',
+                                cursor: 'pointer',
+                                fontSize: '1.25rem',
+                                padding: '0.25rem',
+                                marginLeft: '0.5rem'
+                            }}
+                        >
+                            ×
+                        </button>
                 </div>
             )}
 
             {/* Header */}
-            <header style={{
-                backgroundColor: 'white',
-                borderBottom: '1px solid #E8E8E8',
-                padding: '1rem 2rem',
-                position: 'sticky',
-                top: 0,
-                zIndex: 100
-            }}>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    maxWidth: '1200px',
-                    margin: '0 auto'
-                }}>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '2rem'
-                    }}>
-                        <h1 style={{
-                            fontFamily: 'Recoleta, serif',
-                            fontSize: '1.5rem',
-                            fontWeight: 'bold',
-                            color: '#212529',
-                            margin: 0
-                        }}>
+            <header className={'dashboard_header'}>
+
+                <div className={'dash_nav'}>
+
+                    <div className={'dash_opt_0'}>
+
+                        <h1>
                             {podcast_metadata?.name || 'PodPilot'}
                         </h1>
 
-                        <nav style={{ display: 'flex', gap: '1.5rem' }}>
+                        <nav className={'navi'}>
                             {['overview', 'episodes'].map((tab) => (
-                                <button
+                                <button className={`navi_buttons ${activeTab === tab ? 'active' : ''}`}
                                     key={tab}
-                                    onClick={() => setActiveTab(tab as 'overview' | 'episodes')}
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        padding: '0.5rem 1rem',
-                                        borderRadius: '8px',
-                                        fontFamily: 'Satoshi, sans-serif',
-                                        fontWeight: '500',
-                                        fontSize: '0.9rem',
-                                        cursor: 'pointer',
-                                        color: activeTab === tab ? '#4285F4' : '#6C757D',
-                                        backgroundColor: activeTab === tab ? '#F8F9FF' : 'transparent',
-                                        transition: 'all 0.2s ease',
-                                        textTransform: 'capitalize'
-                                    }}
-                                >
+                                    onClick={() => setActiveTab(tab as 'overview' | 'episodes')}>
                                     {tab}
                                 </button>
                             ))}
                         </nav>
+
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div className={'dash_opt_1'}>
 
-
-                        <button
-
-                            style={{
-                                padding: '0.75rem 1.5rem',
-                                backgroundColor: '#000000',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                fontFamily: 'Satoshi, sans-serif',
-                                fontWeight: '600',
-                                fontSize: '0.9rem',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                            }}
-                            onClick={() => navigate('/NewEpisodeUpload')}>
-
+                        <button className={'upload'} onClick={() => navigate('/NewEpisodeUpload')}>
                             Upload Episode
                         </button>
 
                         {/* User Avatar */}
-                        <div style={{
-                            width: '2.5rem',
-                            height: '2.5rem',
-                            borderRadius: '50%',
+                        <div className={'dash_avatar'} style={{
                             backgroundColor: avatarUrl ? 'transparent' : '#000000',
                             backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            fontSize: '0.875rem'
-                        }}>
+                            }}>
                             {!podcast_metadata?.avatar_url && (
                                 podcast_metadata?.name ? getInitials(podcast_metadata.name) : 'U'
                             )}
                         </div>
+
                     </div>
                 </div>
 
-                <button
-                    onClick={handleLogout}
-                    style={{
-                        padding: "0.65rem 1.25rem",
-                        backgroundColor: "#F8F9FF",
-                        color: "#4285F4",
-                        border: "1px solid #4285F4",
-                        borderRadius: "6px",
-                        fontFamily: "Satoshi, sans-serif",
-                        fontWeight: 500,
-                        cursor: "pointer",
-                    }}
-                >
+                <button className={'logout'} onClick={handleLogout}>
                     Log&nbsp;out
                 </button>
 
-
-
-                {/*<button
-                    onClick={() =>
-                        logout({ logoutParams: { returnTo: window.location.origin } })
-                    }
-                    style={{
-                        padding: "0.65rem 1.25rem",
-                        backgroundColor: "#F8F9FF",
-                        color: "#4285F4",
-                        border: "1px solid #4285F4",
-                        borderRadius: "6px",
-                        fontFamily: "Satoshi, sans-serif",
-                        fontWeight: 500,
-                        cursor: "pointer",
-                    }}
-                >
-                    Log&nbsp;out
-                </button>*/}
             </header>
+
             {/* Main Content */}
-            <main
-                style={
-                    {
-                        maxWidth: '1200px',
-                        margin: '0 auto',
-                        padding: '2rem'
-                    }
-                }>
+            <main className={'mainSec'}>
+
                 {activeTab === 'overview' && (
                     <div>
                         {/* Welcome, Section */}
-                        <div style={{
-                            backgroundColor: 'white',
-                            borderRadius: '12px',
-                            padding: '2rem',
-                            marginBottom: '2rem',
-                            border: '1px solid #E8E8E8',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                        }}>
-                            <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'flex-start',
-                                marginBottom: '1rem'
-                            }}>
-                                <div>
-                                    <h2 style={{
-                                        fontFamily: 'Satoshi, sans-serif',
-                                        fontSize: '1.5rem',
-                                        fontWeight: '600',
-                                        color: '#212529',
-                                        margin: '0 0 0.5rem 0'
-                                    }}>
+                        <div className={'welcomeSec'}>
+                            <div className={'welcomeBackContent'}>
+                                <div className={'contentHolder'}>
+                                    <h2>
                                         Welcome back, {userProfile?.username || 'Creator'}! 👋
                                     </h2>
-                                    <p style={{
-                                        color: '#6C757D',
-                                        margin: 0,
-                                        fontFamily: 'Satoshi, sans-serif'
-                                    }}>
+                                    <p>
                                         {podcast_metadata?.description || 'Upload episodes, manage your RSS feed, and let listeners discover your content.'}
                                     </p>
                                 </div>
-                                <button
+                                {/*<button
                                     onClick={() => setIsEditingMetadata(true)}
                                     style={{
                                         padding: '0.5rem 1rem',
@@ -697,25 +575,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                     }}
                                 >
                                     Edit Details
-                                </button>
+                                </button>*/}
                             </div>
 
                             {/* Profile and Podcast Images */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                                gap: '2rem',
-                                marginTop: '2rem'
-                            }}>
+                            <div className={'profileUploadSec'}>
 
-                                <div style={{ textAlign: 'center' }}>
-                                    <h3 style={{
-                                        fontFamily: 'Satoshi, sans-serif',
-                                        fontSize: '1rem',
-                                        fontWeight: '500',
-                                        color: '#495057',
-                                        marginBottom: '1rem'
-                                    }}>
+                                <div className={'txtC'}>
+                                    <h3>
                                         Your Profile
                                     </h3>
                                     <ImageUpload
@@ -724,17 +591,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                         type="avatar"
                                         size="sm"
                                     />
-
                                 </div>
 
-                                <div style={{ textAlign: 'center' }}>
-                                    <h3 style={{
-                                        fontFamily: 'Satoshi, sans-serif',
-                                        fontSize: '1rem',
-                                        fontWeight: '500',
-                                        color: '#495057',
-                                        marginBottom: '1rem'
-                                    }}>
+                                <div className={'txtC'}>
+                                    <h3>
                                         Podcast Logo
                                     </h3>
                                     <ImageUpload
@@ -744,36 +604,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                         size="md"
                                     />
                                 </div>
+
                                 {videoUrl && (
-                                    <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-                                        <h3 style={{
-                                            fontFamily: 'Satoshi, sans-serif',
-                                            fontSize: '1rem',
-                                            fontWeight: '500',
-                                            color: '#495057',
-                                            marginBottom: '1rem'
-                                        }}>
+
+                                    <div className={'vidPreHolder'}>
+                                        <h3>
                                             Uploaded Video Preview
                                         </h3>
-                                        <video controls width="100%" style={{ maxWidth: '600px', borderRadius: '12px' }}>
+                                        <video className={'videoContent'} controls width="100%">
                                             <source src={videoUrl} type="video/mp4" />
                                             Your browser does not support the video tag.
                                         </video>
                                     </div>
                                 )}
                             </div>
-                            <div style={{ textAlign: 'center' }}>
-                                <h3 style={{
-                                    fontFamily: 'Satoshi, sans-serif',
-                                    fontSize: '1rem',
-                                    fontWeight: '500',
-                                    color: '#495057',
-                                    marginBottom: '1rem'
-                                }}>
+                            <div className={'txtC'}>
+                                <h3>
                                     Upload a Promo Video
                                 </h3>
 
-                                <div
+                                <div className={'videoDragDrop'}
                                     onDrop={(e) => {
                                         e.preventDefault();
                                         const file = e.dataTransfer.files?.[0];
@@ -781,17 +631,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                     }}
                                     onDragOver={(e) => e.preventDefault()}
                                     style={{
-                                        border: '2px dashed #CED4DA',
-                                        padding: '2rem',
-                                        borderRadius: '12px',
-                                        backgroundColor: '#FAFAFA',
-                                        cursor: 'pointer'
+
                                     }}
                                     onClick={() => document.getElementById('videoInput')?.click()}
-                                >
-                                    <p style={{ margin: 0, color: '#6C757D' }}>
+                                    >
+
+                                    <p>
                                         Drag and drop your video file here, or click to select
                                     </p>
+
                                     <input
                                         id="videoInput"
                                         type="file"
@@ -804,35 +652,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                     />
                                 </div>
                             </div>
+
+                            {/*Unknown what's below*/}
                             {isEditingMetadata ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '2rem' }}>
+                                <div className={'editMetaContent'}>
                                     <input
                                         type="text"
                                         placeholder="Podcast Name"
                                         value={editForm.name}
                                         onChange={(e) => updateMetadata('name', e.target.value)}
-                                        style={{
-                                            padding: '0.75rem',
-                                            border: '1px solid #E8E8E8',
-                                            borderRadius: '6px',
-                                            fontFamily: 'Satoshi, sans-serif'
-                                        }}
                                     />
+
                                     <textarea
                                         placeholder="Podcast Description"
                                         value={editForm.description}
                                         onChange={(e) => updateMetadata('description', e.target.value)}
                                         rows={3}
-                                        style={{
-                                            padding: '0.75rem',
-                                            border: '1px solid #E8E8E8',
-                                            borderRadius: '6px',
-                                            fontFamily: 'Satoshi, sans-serif',
-                                            resize: 'vertical'
-                                        }}
                                     />
 
-                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <div className={'inputButtonHolder'}>
                                         <input
                                             type="text"
                                             placeholder="Add tag"
@@ -844,63 +682,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                                     addTag();
                                                 }
                                             }}
-                                            style={{
-                                                flex: 1,
-                                                padding: '0.75rem',
-                                                border: '1px solid #E8E8E8',
-                                                borderRadius: '6px',
-                                                fontFamily: 'Satoshi, sans-serif'
-                                            }}
                                         />
-                                        <button
-                                            onClick={addTag}
-                                            style={{
-                                                padding: '0.75rem 1rem',
-                                                backgroundColor: '#4285F4',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                                fontFamily: 'Satoshi, sans-serif',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
+                                        <button onClick={addTag}>
                                             Add
                                         </button>
                                     </div>
 
                                     {editForm.tags.length > 0 && (
-                                        <div style={{
-                                            display: 'flex',
-                                            flexWrap: 'wrap',
-                                            gap: '0.5rem'
-                                        }}>
+                                        <div className={'editFormContent'}>
                                             {editForm.tags.map((tag, index) => (
-                                                <span
-                                                    key={index}
-                                                    style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '0.5rem',
-                                                        padding: '0.25rem 0.75rem',
-                                                        backgroundColor: '#4285F4',
-                                                        color: 'white',
-                                                        borderRadius: '12px',
-                                                        fontSize: '0.75rem',
-                                                        fontFamily: 'Satoshi, sans-serif'
-                                                    }}
-                                                >
+                                                <span key={index}>
                                                     {tag}
-                                                    <button
-                                                        onClick={() => removeTag(tag)}
-                                                        style={{
-                                                            background: 'none',
-                                                            border: 'none',
-                                                            color: 'white',
-                                                            cursor: 'pointer',
-                                                            fontSize: '1rem',
-                                                            padding: 0
-                                                        }}
-                                                    >
+                                                    <button onClick={() => removeTag(tag)}>
                                                         ×
                                                     </button>
                                                 </span>
@@ -908,34 +701,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                         </div>
                                     )}
 
-                                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                                        <button
-                                            onClick={saveMetadata}
-                                            style={{
-                                                padding: '0.75rem 1.5rem',
-                                                backgroundColor: '#000000',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                                fontFamily: 'Satoshi, sans-serif',
-                                                cursor: 'pointer',
-                                                fontWeight: '500'
-                                            }}
-                                        >
+                                    <div className={'saveMetaContent'}>
+                                        <button className={'saveBtn'} onClick={saveMetadata}>
                                             Save Changes
                                         </button>
-                                        <button
-                                            onClick={cancelEdit}
-                                            style={{
-                                                padding: '0.75rem 1.5rem',
-                                                backgroundColor: 'white',
-                                                color: '#495057',
-                                                border: '1px solid #CED4DA',
-                                                borderRadius: '6px',
-                                                fontFamily: 'Satoshi, sans-serif',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
+                                        <button className={'cancelBtn'} onClick={cancelEdit}>
                                             Cancel
                                         </button>
                                     </div>
@@ -943,35 +713,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                             ) : (
                                 <>
                                     {podcast_metadata?.tag && podcast_metadata.tag.length > 0 && (
-                                        <div style={{
-                                            display: 'flex',
-                                            flexWrap: 'wrap',
-                                            gap: '0.5rem',
-                                            marginTop: '1rem'
-                                        }}>
-                                            <span style={{
-                                                fontSize: '0.875rem',
-                                                color: '#495057',
-                                                fontFamily: 'Satoshi, sans-serif',
-                                                fontWeight: '500',
-                                                marginRight: '0.5rem'
-                                            }}>
+                                        <div className={'podCastMetaContent'}>
+                                            <span className={'podSpan0'}>
                                                 Tags:
                                             </span>
                                             {podcast_metadata.tag.map((tag, index) => (
-                                                <span
-                                                    key={index}
-                                                    style={{
-                                                        padding: '0.25rem 0.75rem',
-                                                        backgroundColor: '#F8F9FF',
-                                                        color: '#4285F4',
-                                                        borderRadius: '12px',
-                                                        fontSize: '0.75rem',
-                                                        fontFamily: 'Satoshi, sans-serif',
-                                                        fontWeight: '500',
-                                                        border: '1px solid #E8F0FE'
-                                                    }}
-                                                >
+                                                <span className={'podSpan1'} key={index}>
                                                     {tag}
                                                 </span>
                                             ))}
@@ -979,73 +726,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                     )}
                                 </>
                             )}
-                            <p>
+                            {/*/*Unknown what's below ends*/}
+                            {/*<p>
                                 Upload episodes, manage , and let listeners discover your content.
-                            </p>
+                            </p>*/}
 
                         </div>
 
                         {/* Stats Grid */}
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                            gap: '1.5rem',
-                            marginBottom: '2rem'
-                        }}>
-                            <div style={{
-                                backgroundColor: 'white',
-                                borderRadius: '8px',
-                                padding: '1.5rem',
-                                border: '1px solid #E8E8E8',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                            }}>
-                                <h3 style={{
-                                    fontFamily: 'Satoshi, sans-serif',
-                                    fontSize: '0.875rem',
-                                    fontWeight: '500',
-                                    color: '#6C757D',
-                                    margin: '0 0 0.5rem 0',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em'
-                                }}>
+                        <div className={'statContent'}>
+                            <div className={'statHolder'}>
+                                <h3>
                                     Total Episodes
                                 </h3>
-                                <p style={{
-                                    fontSize: '2rem',
-                                    fontWeight: '700',
-                                    color: '#212529',
-                                    margin: 0,
-                                    fontFamily: 'Satoshi, sans-serif'
-                                }}>
+                                <p >
                                     {stats.totalEpisodes}
                                 </p>
                             </div>
 
-                            <div style={{
-                                backgroundColor: 'white',
-                                borderRadius: '8px',
-                                padding: '1.5rem',
-                                border: '1px solid #E8E8E8',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                            }}>
-                                <h3 style={{
-                                    fontFamily: 'Satoshi, sans-serif',
-                                    fontSize: '0.875rem',
-                                    fontWeight: '500',
-                                    color: '#6C757D',
-                                    margin: '0 0 0.5rem 0',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em'
-                                }}>
+                            <div className={'statHolder'}>
+                                <h3>
                                     Total Plays
                                 </h3>
-                                <p style={{
-                                    fontSize: '2rem',
-                                    fontWeight: '700',
-                                    color: '#212529',
-                                    margin: 0,
-                                    fontFamily: 'Satoshi, sans-serif'
-                                }}>
+                                <p>
                                     {stats.totalPlays.toLocaleString()}
                                 </p>
                             </div>
@@ -1054,62 +757,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                         </div>
 
                         {/* Recent Episodes */}
-                        <div style={{
-                            backgroundColor: 'white',
-                            borderRadius: '12px',
-                            padding: '2rem',
-                            border: '1px solid #E8E8E8',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                        }}>
-                            <h2 style={{
-                                fontFamily: 'Satoshi, sans-serif',
-                                fontSize: '1.25rem',
-                                fontWeight: '600',
-                                color: '#212529',
-                                margin: '0 0 1.5rem 0'
-                            }}>
+                        <div className={'recentEpisodeContent'}>
+                            <h2>
                                 Your Episodes
                             </h2>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div className={'episodeContent'} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {recentVideos.map((video) => (
-                                    <div
-                                        key={video.name}
-                                        style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: '0.5rem',
-                                            padding: '1rem',
-                                            backgroundColor: '#F9F9F9',
-                                            borderRadius: '8px',
-                                            border: '1px solid #E8E8E8',
-                                        }}
-                                    >
+                                    <div className={'recentVid'} key={video.name}>
                                         <video
                                             width="100%"
                                             height="auto"
                                             controls
                                             src={video.publicUrl}
                                         />
-                                        <span
-                                            style={{
-                                                fontFamily: 'Satoshi, sans-serif',
-                                                fontSize: '0.875rem',
-                                                fontWeight: 600,
-                                                color: '#212529',
-                                            }}
-                                        >
-      {video.name}
-    </span>
-                                        <span
-                                            style={{
-                                                fontSize: '0.75rem',
-                                                color: '#6C757D',
-                                                fontFamily: 'Satoshi, sans-serif',
-                                            }}
-                                        >
-      Uploaded on {new Date(video.createdAt).toLocaleDateString()}
-    </span>
+                                        <span className={'vidSpan0'}>
+                                            {video.name}
+                                        </span>
+                                        <span className={'vidSpan1'}>
+                                        Uploaded on {new Date(video.createdAt).toLocaleDateString()}
+                                        </span>
                                     </div>
                                 ))}
 
@@ -1120,147 +787,56 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                 )}
 
                 {activeTab === 'episodes' && (
-                    <div>
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '2rem'
-                        }}>
-                            <h2 style={{
-                                fontFamily: 'Satoshi, sans-serif',
-                                fontSize: '1.5rem',
-                                fontWeight: '600',
-                                color: '#212529',
-                                margin: 0
-                            }}>
+                    <div className={'actEpisodeContent'}>
+                        <div className={'actEpisodeItem0'}>
+                            <h2>
                                 Manage Episodes
                             </h2>
-                            <button
-                                onClick={onNavigateToUpload}
-                                style={{
-                                    padding: '0.75rem 1.5rem',
-                                    backgroundColor: '#000000',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    fontFamily: 'Satoshi, sans-serif',
-                                    fontWeight: '600',
-                                    fontSize: '0.9rem',
-                                    cursor: 'pointer'
-                                }}
-                            >
+                            <button onClick={onNavigateToUpload}>
                                 Upload Episode
                             </button>
                         </div>
 
-                        <div style={{
-                            backgroundColor: 'white',
-                            borderRadius: '12px',
-                            padding: '2rem',
-                            border: '1px solid #E8E8E8',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                        }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div className={'actEpisodeItem1'}>
+                            <div className={'actEpiSubItem0'}>
                                 {recentEpisodes.map((episode: Episode) => (
-                                    <div
-                                        key={episode.id}
-                                        style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            padding: '1.5rem',
-                                            backgroundColor: '#FAFAFA',
-                                            borderRadius: '8px',
-                                            border: '1px solid #E8E8E8'
-                                        }}
-                                    >
-                                        <div style={{ flex: 1 }}>
-                                            <h3 style={{
-                                                fontFamily: 'Satoshi, sans-serif',
-                                                fontSize: '1.1rem',
-                                                fontWeight: '600',
-                                                color: '#212529',
-                                                margin: '0 0 0.5rem 0'
-                                            }}>
+                                    <div className={'aeSubItem0'} key={episode.id}>
+                                        <div className={'aeSubItemContent'}>
+                                            <h3>
                                                 {episode.title}
                                             </h3>
-                                            <p style={{
-                                                fontFamily: 'Satoshi, sans-serif',
-                                                fontSize: '0.9rem',
-                                                color: '#6C757D',
-                                                margin: '0 0 1rem 0'
-                                            }}>
+                                            <p>
                                                 {episode.description}
                                             </p>
 
                                             {episode.status === 'published' && episode.audioFile && (
-                                                <div style={{ marginBottom: '0.5rem' }}>
-                                                    <audio
-                                                        controls
-                                                        style={{
-                                                            width: '100%',
-                                                            maxWidth: '400px',
-                                                            height: '40px'
-                                                        }}
-                                                    >
+                                                <div className={'aeSubItem1'}>
+                                                    <audio controls>
                                                         <source src={`/audio/${episode.audioFile}`} type="audio/mpeg" />
                                                         Your browser does not support the audio element.
                                                     </audio>
                                                 </div>
                                             )}
 
-                                            <div style={{
-                                                display: 'flex',
-                                                gap: '1.5rem',
-                                                alignItems: 'center',
-                                                fontSize: '0.85rem',
-                                                color: '#6C757D',
-                                                fontFamily: 'Satoshi, sans-serif'
-                                            }}>
+                                            <div className={'aeSubItem2'}>
                                                 <span>Duration: {episode.duration}</span>
                                                 <span>{episode.publishDate ? `Published: ${episode.publishDate}` : 'Unpublished'}</span>
                                             </div>
                                         </div>
 
-                                        <div style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem'
-                                        }}>
+                                        <div className={'aeSubItemContent0'}>
                                             <span style={{
-                                                padding: '0.5rem 1rem',
-                                                borderRadius: '20px',
-                                                fontSize: '0.8rem',
-                                                fontWeight: '500',
-                                                fontFamily: 'Satoshi, sans-serif',
                                                 backgroundColor: getStatusColor(episode.status) + '20',
                                                 color: getStatusColor(episode.status)
                                             }}>
                                                 {getStatusText(episode.status)}
                                             </span>
 
-                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                <button style={{
-                                                    padding: '0.5rem 1rem',
-                                                    backgroundColor: 'white',
-                                                    color: '#495057',
-                                                    border: '1px solid #CED4DA',
-                                                    borderRadius: '6px',
-                                                    fontFamily: 'Satoshi, sans-serif',
-                                                    fontSize: '0.8rem',
-                                                    cursor: 'pointer'
-                                                }}>
+                                            <div className={'aeSubItem00'}>
+                                                <button className={'btn0'}>
                                                     Edit
                                                 </button>
-                                                <button style={{
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    fontSize: '1.2rem',
-                                                    cursor: 'pointer',
-                                                    padding: '0.5rem',
-                                                    color: '#6C757D'
-                                                }}>
+                                                <button className={'btn1'}>
                                                     ⋯
                                                 </button>
                                             </div>

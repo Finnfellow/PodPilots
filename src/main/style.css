@@ -1,3 +1,4 @@
+/*Homepage Area*/
 .me-auto{
     margin-right: 0 !important;
     margin-left: auto !important;
@@ -25,3 +26,532 @@
 .post_banner p{
     text-align: center;
 }
+/*Homepage Area Ends*/
+
+/*Dashboard Area*/
+.mainReturn{
+    min-height: 100vh;
+    background-color: #FFFFFF;
+    font-family: Satoshi, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+/*header and nav*/
+
+.dashboard_header{
+    background-color: #fff;
+    border-bottom: 1px solid #E8E8E8;
+    padding: 1rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.dash_nav{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dash_opt_0{
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.dash_opt_0 h1{
+    font-family: Recoleta, serif;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #212529;
+    margin: 0;
+}
+
+.navi{
+    display: flex;
+    gap: 1.5rem;
+}
+
+.navi_buttons{
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-family: 'Satoshi', sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: #6C757D;
+    background: transparent none;
+    transition: all 0.2s ease;
+    text-transform: capitalize;
+}
+
+.navi_buttons:hover, .navi_buttons:active{
+    color: #4285F4;
+    background-color: #F8F9FF;
+}
+
+.dash_opt_1{
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.upload{
+    padding: 0.75rem 1.5rem;
+    background-color: #000000;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-family: Satoshi, sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dash_avatar{
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.logout{
+    padding: 0.65rem 1.25rem;
+    background-color: #F8F9FF;
+    color: #4285F4;
+    border: 1px solid #4285F4;
+    border-radius: 6px;
+    font-family: Satoshi, sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+}
+/*header and nav end*/
+
+/*dash main content*/
+.mainSec{
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.welcomeSec{
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid #E8E8E8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.welcomeBackContent{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.contentHolder h2{
+    font-family: Satoshi, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0 0 0.5rem 0;
+}
+
+.contentHolder p{
+    color: #6C757D;
+    margin: 0;
+    font-family: Satoshi, sans-serif;
+}
+
+.profileUploadSec{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.txtC{
+    text-align: center;
+}
+
+.txtC h3{
+    font-family: Satoshi, sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 1rem;
+}
+
+.vidPreHolder{
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.vidPreHolder h3{
+    font-family: Satoshi, sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 1rem;
+}
+
+.videoContent{
+    max-width: 600px;
+    border-radius: 12px;
+}
+
+.videoDragDrop{
+    border: 2px dashed #CED4DA;
+    padding: 2rem;
+    border-radius: 12px;
+    background-color: #FAFAFA;
+    cursor: pointer;
+}
+
+.videoDragDrop p{
+    margin: 0;
+    color: #6C757D;
+}
+
+.statContent{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.statHolder{
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid #E8E8E8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.statHolder h3{
+    font-family: Satoshi, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6C757D;
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.statHolder p{
+    font-size: 2rem;
+    font-weight: 700;
+    color: #212529;
+    margin: 0;
+    font-family: Satoshi, sans-serif;
+}
+
+.recentEpisodeContent{
+    background-color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid #E8E8E8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.recentEpisodeContent h2{
+    font-family: Satoshi, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0 0 1.5rem 0;
+}
+
+.recentVid{
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    background-color: #F9F9F9;
+    border-radius: 8px;
+    border: 1px solid #E8E8E8;
+}
+
+.vidSpan0{
+    font-family: Satoshi, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.vidSpan1{
+    font-size: 0.75rem;
+    color: #6C757D;
+    font-family: Satoshi, sans-serif;
+}
+/*dash main content end*/
+
+/*editing metadata ?*/
+.editMetaContent{
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.editMetaContent input{
+    padding: 0.75rem;
+    border: 1px solid #E8E8E8;
+    border-radius: 6px;
+    font-family: Satoshi, sans-serif;
+}
+
+.editMetaContent textarea{
+    padding: 0.75rem;
+    border: 1px solid #E8E8E8;
+    border-radius: 6px;
+    font-family: Satoshi, sans-serif;
+    resize: vertical;
+}
+
+.inputButtonHolder{
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.inputButtonHolder input{
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #E8E8E8;
+    border-radius: 6px;
+    font-family: Satoshi, sans-serif;
+}
+
+.inputButtonHolder button{
+    padding: 0.75rem 1rem;
+    background-color: #4285F4;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-family: Satoshi, sans-serif;
+    cursor: pointer;
+}
+
+.editFormContent{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.editFormContent span{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background-color: #4285F4;
+    color: white;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-family: Satoshi, sans-serif;
+}
+
+.editFormContent span button{
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0;
+}
+
+.saveMetaContent{
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.saveMetaContent button.saveBtn{
+    padding: 0.75rem 1.5rem;
+    background-color: #000000;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-family: Satoshi, sans-serif;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.saveMetaContent button.cancelBtn{
+    padding: 0.75rem 1.5rem;
+    background-color: white;
+    color: #495057;
+    border: 1px solid #CED4DA;
+    border-radius: 6px;
+    font-family: Satoshi, sans-serif;
+    cursor: pointer;
+}
+
+.podCastMetaContent{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.podCastMetaContent .podSpan0{
+    font-size: 0.875rem;
+    color: #495057;
+    font-family: Satoshi, sans-serif;
+    font-weight: 500;
+    margin-right: 0.5rem;
+}
+
+.podCastMetaContent .podSpan1{
+    padding: 0.25rem 0.75rem;
+    background-color: #F8F9FF;
+    color: #4285F4;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-family: Satoshi, sans-serif;
+    font-weight: 500;
+    border: 1px solid #E8F0FE;
+}
+/*editing metadata ? end*/
+
+/*activeTab content*/
+.actEpisodeItem0{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.actEpisodeItem0 h2{
+    font-family: Satoshi, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+}
+
+.actEpisodeItem0 button{
+    padding: 0.75rem 1.5rem;
+    background-color: #000000;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-family: Satoshi, sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.actEpisodeItem1{
+    background-color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid #E8E8E8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04)
+}
+
+.actEpiSubItem0{
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.aeSubItem0{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background-color: #FAFAFA;
+    border-radius: 8px;
+    border: 1px solid #E8E8E8;
+}
+
+.aeSubItemContent{
+    flex: 1;
+}
+
+.aeSubItemContent h3{
+    font-family: Satoshi, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0 0 0.5rem 0;
+}
+
+.aeSubItemContent p{
+    font-family: Satoshi, sans-serif;
+    font-size: 0.9rem;
+    color: #6C757D;
+    margin: 0 0 1rem 0;
+}
+
+.aeSubItem1{
+    margin-bottom: 0.5rem;
+}
+
+.aeSubItem1 audio{
+    width: 100%;
+    max-width: 400px;
+    height: 40px;
+}
+
+.aeSubItem2{
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #6C757D;
+    font-family: Satoshi, sans-serif
+}
+
+.aeSubItemContent0{
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.aeSubItemContent0 span{
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: Satoshi, sans-serif;
+}
+
+.aeSubItem00{
+    display: flex;
+    gap: 0.5rem;
+}
+
+.aeSubItem00 .btn0{
+    padding: 0.5rem 1rem;
+    background-color: white;
+    color: #495057;
+    border: 1px solid #CED4DA;
+    border-radius: 6px;
+    font-family: Satoshi, sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.aeSubItem00 .btn1{
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    color: #6C757D;
+}
+/*activeTab content end*/
+/*Dashboard Area Ends*/

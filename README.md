@@ -10,6 +10,11 @@ PodPilot is a streamlined podcast publishing and analytics dashboard designed to
 - Upload a video to PodPilot for playback
 
 
+## Bravo Features
+-  User Search
+-  Previous videos are sorted in the past videos by popularity
+-  Share videos
+
 
 ## Features
 

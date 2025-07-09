@@ -12,6 +12,7 @@ import '../main/style.css';
 
 
 
+
 interface Episode {
     id: string;
     title: string;
@@ -57,7 +58,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const [logoUrl] = useState<string | null>(null);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [recentVideos, setRecentVideos] = useState<
-        { name: string; createdAt: string; publicUrl: string}[]
+        { name: string; createdAt: string; publicUrl: string; slug: string}[]
     >([]);
 
 
@@ -89,7 +90,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     };
 
     // Define recentEpisodes
-    const [recentEpisodes, setRecentEpisodes] = useState<Episode[]>([]);
+    const [recentEpisodes] = useState<Episode[]>([]);
 
     /*const [recentEpisodes] = useState<Episode[]>([
         {
@@ -126,10 +127,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const handleVideoUpload = async (file: File) => {
         try {
             const userId = user?.id;
+
             if (!userId) throw new Error("User not authenticated");
 
             const safeName = sanitizeForStorage(file.name);
             const path = `videos/${Date.now()}-${safeName}`;
+            const slug = `${Date.now()}-${file.name.replace(/\.[^/.]+$/, "")}`
+                .toLowerCase()
+                .replace(/\s+/g, "-")
+                .replace(/[^a-z0-9-_]/g, "");
+
 
             // ✅ Upload to the correct bucket
             const { error: uploadError } = await supabase.storage
@@ -151,15 +158,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
 
             // ✅ Save metadata to video_uploads table
             const { error: insertError } = await supabase
-                .from("video_uploads")
+                .from("media_files")
                 .insert([
                     {
-                        user_id: userId,
+                        user_id: userId,           // 👈 now it will match
                         file_name: file.name,
                         storage_path: path,
                         public_url: url,
                         file_size: file.size,
-                        uploaded_at: new Date().toISOString()
+                        uploaded_at: new Date().toISOString(),
+                        slug: slug,       // e.g. "my-first-episode"
+                        type: "video"
                     }
                 ]);
 
@@ -245,51 +254,32 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     };
 
     const fetchRecentVideos = async () => {
-        const { data, error } = await supabase.storage
-            .from("video.bucket")
-            .list("videos", {
-                limit: 10,
-                sortBy: { column: "created_at", order: "desc" }
-            });
+        const { data, error } = await supabase
+            .from("media_files")
+            .select("file_name, public_url, uploaded_at, slug")
+            .order("uploaded_at", { ascending: false })
+            .limit(10);
 
         if (error) {
-            console.error("Error fetching videos:", error.message);
+            console.error("Error fetching recent videos:", error.message);
             return;
         }
 
         if (!data || data.length === 0) {
-            console.log("📭 No video files found in: videos/");
+            console.log("📭 No recent videos found.");
             return;
         }
 
-        const recent = data.slice(0, 3).map((file) => {
-            const { data: urlData } = supabase.storage
-                .from("video.bucket")
-                .getPublicUrl(`videos/${file.name}`);
-
-            return {
-                name: file.name,
-                createdAt: file.created_at,
-                publicUrl: urlData?.publicUrl
-            };
-        });
-
-        setRecentVideos(recent);
-        console.log("📦 Recent videos loaded:", recent);
-
-        const episodes = recent.map((vid, index) => ({
-            id: (index + 1).toString(),
-            title: `Episode ${index + 1}`,
-            description: 'Auto-generated episode from uploaded video',
-            publishDate: new Date().toISOString().split('T')[0],
-            duration: 'N/A',
-            status: 'published' as 'published',
-            videoUrl: vid.publicUrl,
+        const recent = data.map((file) => ({
+            name: file.file_name,
+            createdAt: file.uploaded_at,
+            publicUrl: file.public_url,
+            slug: file.slug,
         }));
 
-        setRecentEpisodes(episodes);
+        setRecentVideos(recent);
+        console.log("✅ Recent videos loaded:", recent);
     };
-
 
 
 
@@ -771,12 +761,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                             controls
                                             src={video.publicUrl}
                                         />
-                                        <span className={'vidSpan0'}>
-                                            {video.name}
-                                        </span>
+                                        <span className={'vidSpan0'}>{video.name}</span>
                                         <span className={'vidSpan1'}>
-                                        Uploaded on {new Date(video.createdAt).toLocaleDateString()}
-                                        </span>
+      Uploaded on {new Date(video.createdAt).toLocaleDateString()}
+    </span>
+
+                                        {/* ✅ Add shareable link */}
+                                        {video.slug && (
+                                            <div style={{ marginTop: '0.5rem' }}>
+                                                <a
+                                                    href={`/videos/${video.slug}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{ fontSize: '0.85rem', color: '#4285F4' }}
+                                                >
+                                                    🔗 Share this video
+                                                </a>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
 

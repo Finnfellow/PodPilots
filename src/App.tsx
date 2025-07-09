@@ -6,6 +6,7 @@ import Dashboard from "./components/Dashboard.tsx";
 //import NewEpisodeUpload from "./components/NewEpisodeUpload.tsx";
 import Callback from "./components/CallBack.tsx";
 import ProtectedRoute from "../src/components/protectedRoute.tsx";
+import VideoPage from "./VideoPage.tsx";
 
 
 function App() {
@@ -27,11 +28,8 @@ function App() {
                     <Dashboard />
                 </ProtectedRoute>
             }/>
-            {/*<Route path="/NewEpisodeUpload" element={*/}
-            {/*    <ProtectedRoute><NewEpisodeUpload />*/}
-            {/*    </ProtectedRoute>*/}
-            {/*} />*/}
             <Route path="/callback" element={<Callback />} />
+            <Route path="/videos/:slug" element={<VideoPage />} />
         </Routes>
     );
 }

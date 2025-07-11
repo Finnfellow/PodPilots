@@ -18,6 +18,7 @@ export interface UserProfile {
 }
 
 export interface PodcastMetadata {
+    id: string;
     user_id: string;
     name: string;
     description: string;
@@ -28,6 +29,7 @@ export interface PodcastMetadata {
     updated_at?: string;
     avatar_url?: string;
     avatar_public_id?: string;
+    display_name?: string;
 }
 
 // Cloud storage service using Supabase

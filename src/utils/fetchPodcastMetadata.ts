@@ -19,6 +19,7 @@ export const fetchPodcastMetadata = async (userId: string): Promise<PodcastMetad
     }
 
     return {
+        id: data.id,
         name: data.name,
         description: data.description,
         tag: data.tags,
@@ -26,6 +27,7 @@ export const fetchPodcastMetadata = async (userId: string): Promise<PodcastMetad
         logo_public_id: data.logo_public_id,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        user_id: data.user_id
+        user_id: data.user_id,
+        display_name: data.display_name
     };
 };

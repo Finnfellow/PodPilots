@@ -7,9 +7,30 @@ import Dashboard from "./components/Dashboard.tsx";
 import Callback from "./components/CallBack.tsx";
 import ProtectedRoute from "../src/components/protectedRoute.tsx";
 import VideoPage from "./VideoPage.tsx";
+import {useEffect} from "react";
+import {supabase} from "./supabaseClient.ts";
 
 
 function App() {
+
+    useEffect(() => {
+        const handleUnload = () => {
+            // Fire-and-forget sign-out
+            supabase.auth.signOut();
+
+            // Force-remove session from localStorage (works even if signOut fails)
+            Object.keys(localStorage).forEach((key) => {
+                if (key.startsWith("sb-")) {
+                    localStorage.removeItem(key);
+                }
+            });
+        };
+
+        window.addEventListener("unload", handleUnload);
+        return () => {
+            window.removeEventListener("unload", handleUnload);
+        };
+    }, []);
     return (
         <Routes>
             <Route path="/" element={<Home />} />
@@ -17,9 +38,6 @@ function App() {
                 path="/onboarding"
                 element={
                     <OnboardingFlow
-                        onComplete={() => {
-                            throw new Error("Function not implemented.");
-                        }}
                     />
                 }
             />

@@ -175,9 +175,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
             if (insertError) throw insertError;
 
             console.log("✅ Video uploaded and metadata saved");
+            await fetchRecentVideos(userId);
         } catch (err) {
             console.error("❌ Video upload failed:", err);
         }
+
+
     };
     //new code
     const handleAvatarUpload = async (file: File) => {
@@ -253,10 +256,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         }
     };
 
-    const fetchRecentVideos = async () => {
+    const fetchRecentVideos = async (userId: string) => {
         const { data, error } = await supabase
             .from("media_files")
             .select("file_name, public_url, uploaded_at, slug")
+            .eq("user_id", userId)
             .order("uploaded_at", { ascending: false })
             .limit(10);
 
@@ -308,10 +312,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         // ✅ NEW: Fetch user from Supabase and store in local state
         const fetchUser = async () => {
             const { data } = await supabase.auth.getUser();
-            setUser(data.user);
+            const currentUser = data.user;
+            setUser(currentUser);
 
-            if (data.user?.id) {
-                await fetchRecentVideos();
+            if (currentUser?.id) {
+                await fetchRecentVideos(currentUser.id);
             }
 
 
@@ -544,7 +549,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                             <div className={'welcomeBackContent'}>
                                 <div className={'contentHolder'}>
                                     <h2>
-                                        Welcome back, {userProfile?.username || 'Creator'}! 👋
+                                        Welcome back, {podcast_metadata?.name || 'Creator'}! 👋
                                     </h2>
                                     <p>
                                         {podcast_metadata?.description || 'Upload episodes, manage your RSS feed, and let listeners discover your content.'}

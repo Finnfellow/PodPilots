@@ -23,18 +23,19 @@ function Home() {
             const sessionUser = data.session?.user ?? null;
             setUser(sessionUser);
             setLoading(false);
-
+/*
             if (sessionUser) {
                 navigate("/dashboard");
-            }
+            }*/
         };
         getSession();
 
-        const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
             const sessionUser = session?.user ?? null;
             setUser(sessionUser);
 
-            if (sessionUser) {
+            // ✅ only redirect AFTER login event
+            if (event === 'SIGNED_IN' && sessionUser) {
                 navigate("/dashboard");
             }
         });
@@ -43,7 +44,6 @@ function Home() {
             listener.subscription.unsubscribe();
         };
     }, [navigate]);
-
     if (loading) return null;
 
     return (

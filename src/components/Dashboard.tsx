@@ -649,7 +649,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
 
             </header>
 
-            {searchResults.length > 0 && (
+            {/*{searchResults.length > 0 && (
                 <section className="search-results">
                     <h2>Search Results</h2>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
@@ -686,7 +686,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                         ))}
                     </div>
                 </section>
-            )}
+            )}*/}
 
 
             {/* Main Content */}

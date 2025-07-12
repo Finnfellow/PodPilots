@@ -60,6 +60,47 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const [recentVideos, setRecentVideos] = useState<
         { name: string; createdAt: string; publicUrl: string; slug: string}[]
     >([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState<PodcastMetadata[]>([]);
+
+
+    const handleSearch = async () => {
+        try {
+            const term = searchTerm.trim();
+            if (!term) return;
+
+            console.log(`🧪 Final trimmed search term: '${term}'`);
+
+            const { data, error } = await supabase
+                .from('podcast_metadata')
+                .select(`
+                id,
+                name,
+                description,
+                avatar_url,
+                user_id,
+                tag,
+                created_at,
+                display_name
+            `);
+
+            if (error) throw error;
+
+            console.log("🧠 Supabase full metadata:", data);
+
+            // Perform filtering client-side just to confirm what's being searched
+            const filtered = data?.filter((entry) =>
+                entry.display_name?.toLowerCase().includes(term.toLowerCase())
+            ) || [];
+
+            console.log("🔍 Filtered search results:", filtered);
+            setSearchResults(filtered);
+        } catch (err) {
+            console.error('❌ Search error:', err);
+        }
+    };
+
+
 
 
     const loadImages = async () => {
@@ -372,6 +413,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
 
         // 1️⃣ Build the object you use in React-state / localStorage
         const updatedMetadata: PodcastMetadata = {
+            id:           podcast_metadata?.id || '',
             name:        editForm.name,
             description: editForm.description,
             tag:         editForm.tags,
@@ -509,12 +551,76 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                     onClick={() => setActiveTab(tab as 'overview' | 'episodes')}>
                                     {tab}
                                 </button>
+
+
                             ))}
                         </nav>
 
                     </div>
 
                     <div className={'dash_opt_1'}>
+
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleSearch(); // this will be defined later
+                            }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        >
+                            <input
+                                type="text"
+                                placeholder="Search podcasters"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{
+                                    padding: '0.5rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ccc',
+                                    fontFamily: 'Satoshi, sans-serif'
+                                }}
+                            />
+
+                            {searchResults.length > 0 && (
+                                <div className="search-dropdown">
+                                    {searchResults.map((result) => (
+                                        <div
+                                            key={result.id}
+                                            className="search-result-item"
+                                            onClick={() => {
+                                                // Example: navigate to a podcaster page
+                                                navigate(`/podcasters/${result.user_id}`);
+                                            }}
+                                        >
+                                            <img
+                                                src={result.avatar_url || '/default-avatar.png'}
+                                                alt="avatar"
+                                                className="search-avatar"
+                                            />
+                                            <div>
+                                                <div className="search-name">{result.display_name}</div>
+                                                <div className="search-description">
+                                                    {result.description?.slice(0, 60)}...
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    backgroundColor: '#1A8C67',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Search
+                            </button>
+                        </form>
 
                         <button className={'upload'} onClick={() => navigate('/NewEpisodeUpload')}>
                             Upload Episode
@@ -530,14 +636,58 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                             )}
                         </div>
 
+
+
                     </div>
                 </div>
+
+
 
                 <button className={'logout'} onClick={handleLogout}>
                     Log&nbsp;out
                 </button>
 
             </header>
+
+            {searchResults.length > 0 && (
+                <section className="search-results">
+                    <h2>Search Results</h2>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
+                        {searchResults.map((podcaster) => (
+                            <div
+                                key={podcaster.id}
+                                style={{
+                                    padding: '1rem',
+                                    border: '1px solid #ccc',
+                                    borderRadius: '10px',
+                                    width: '250px',
+                                    backgroundColor: '#fff'
+                                }}
+                            >
+                                <div style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>
+                                    {podcaster.name}
+                                </div>
+                                <div style={{ fontSize: '0.9rem', margin: '0.5rem 0' }}>
+                                    {podcaster.description}
+                                </div>
+                                {podcaster.avatar_url && (
+                                    <img
+                                        src={podcaster.avatar_url}
+                                        alt="Avatar"
+                                        style={{
+                                            width: '100%',
+                                            height: 'auto',
+                                            borderRadius: '6px',
+                                            marginTop: '0.5rem'
+                                        }}
+                                    />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
+
 
             {/* Main Content */}
             <main className={'mainSec'}>

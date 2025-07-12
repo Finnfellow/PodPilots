@@ -135,6 +135,52 @@
     font-weight: 500;
     cursor: pointer;
 }
+
+.search-dropdown {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    max-height: 300px;
+    overflow-y: auto;
+    width: 300px;
+    z-index: 999;
+    top: 55px; /* adjust based on your layout */
+    left: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 0.5rem;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.search-result-item:hover {
+    background: #f5f5f5;
+}
+
+.search-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.search-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.search-description {
+    font-size: 0.8rem;
+    color: #666;
+}
+
 /*header and nav end*/
 
 /*dash main content*/

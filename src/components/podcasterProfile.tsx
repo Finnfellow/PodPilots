@@ -10,6 +10,7 @@ interface MediaFile {
     public_url: string;
     uploaded_at: string;
     slug: string;
+    like_count: number;
 }
 
 interface PodcastMetadata {
@@ -43,10 +44,9 @@ const PodcasterProfile: React.FC = () => {
             // Fetch videos
             const { data: videoData, error: videoError } = await supabase
                 .from('media_files')
-                .select('file_name, public_url, uploaded_at, slug')
+                .select('file_name, public_url, uploaded_at, slug, like_count') // ✅ added like_count
                 .eq('user_id', user_id)
-                .order('uploaded_at', { ascending: false });
-
+                .order('like_count', { ascending: false });
             if (videoError) {
                 console.error("❌ Failed to fetch videos:", videoError);
                 return;
@@ -57,7 +57,25 @@ const PodcasterProfile: React.FC = () => {
 
         if (user_id) fetchData();
     }, [user_id]);
+    const handleLike = async (slug: string, index: number) => {
+        try {
+            const { data, error } = await supabase
+                .from('media_files')
+                .update({ like_count: (videos[index].like_count ?? 0) + 1 })
+                .eq('slug', slug)
+                .select('like_count')
+                .single();
 
+            if (error) throw error;
+
+            // Update local state
+            const updatedVideos = [...videos];
+            updatedVideos[index].like_count = data.like_count;
+            setVideos(updatedVideos);
+        } catch (err) {
+            console.error("❌ Failed to like video:", err);
+        }
+    };
     return (
         <div style={{ padding: '2rem', fontFamily: 'Satoshi, sans-serif' }}>
             {metadata ? (
@@ -101,11 +119,28 @@ const PodcasterProfile: React.FC = () => {
                     <h3 style={{ marginTop: '2rem' }}>Videos</h3>
                     {videos.length > 0 ? (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-                            {videos.map((video) => (
+                            {videos.map((video, index) => (
                                 <div key={video.slug}>
                                     <video width="100%" controls src={video.public_url} />
                                     <div style={{ marginTop: '0.5rem' }}>{video.file_name}</div>
                                     <small>Uploaded on {new Date(video.uploaded_at).toLocaleDateString()}</small>
+
+                                    <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span>❤️ {video.like_count ?? 0} Likes</span>
+                                        <button
+                                            style={{
+                                                background: '#f04f4f',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                padding: '0.25rem 0.5rem',
+                                                cursor: 'pointer',
+                                            }}
+                                            onClick={() => handleLike(video.slug, index)}
+                                        >
+                                            Like
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

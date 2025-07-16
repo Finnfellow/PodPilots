@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./main/Home.tsx";
 import OnboardingFlow from "./components/OnboardingFlow.tsx";
 import Dashboard from "./components/Dashboard.tsx";
+import PodcasterProfile from './components/podcasterProfile.tsx';
 //import NewEpisodeUpload from "./components/NewEpisodeUpload.tsx";
 import Callback from "./components/CallBack.tsx";
 import ProtectedRoute from "../src/components/protectedRoute.tsx";
@@ -46,6 +47,7 @@ function App() {
                     <Dashboard />
                 </ProtectedRoute>
             }/>
+            <Route path="/podcasters/:user_id" element={<PodcasterProfile />} />
             <Route path="/callback" element={<Callback />} />
             <Route path="/videos/:slug" element={<VideoPage />} />
         </Routes>

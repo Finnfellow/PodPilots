@@ -58,7 +58,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const [logoUrl] = useState<string | null>(null);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [recentVideos, setRecentVideos] = useState<
-        { name: string; createdAt: string; publicUrl: string; slug: string}[]
+        { name: string; createdAt: string; publicUrl: string; slug: string; likeCount: number }[]
     >([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<PodcastMetadata[]>([]);
@@ -133,37 +133,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     // Define recentEpisodes
     const [recentEpisodes] = useState<Episode[]>([]);
 
-    /*const [recentEpisodes] = useState<Episode[]>([
-        {
-            id: '1',
-            title: 'Welcome to My Podcast',
-            description: 'Introduction episode where I talk about what to expect',
-            publishDate: '2025-05-28',
-            duration: '12:34',
-            status: 'published',
-            //audioFile: 'welcome-episode.mp3',
-            videoUrl: "https://dxdshzscuxeqmhugilxt.supabase.co/storage/v1/object/public/video.bucket/videos/1750891296067-1750890286432-vecteezy_countdown-one-minute-animation-from-60-to-0-seconds_8976744.mp4"
-        },
-        {
-            id: '2',
-            title: 'Episode 2: Getting Started',
-            description: 'Tips for new podcasters and content creators',
-            publishDate: '2025-06-01',
-            duration: '18:22',
-            status: 'published',
-            //audioFile: 'episode-2.mp3',
-            videoUrl: "https://dxdshzscuxeqmhugilxt.supabase.co/storage/v1/object/public/video.bucket/videos/1750891296067-1750890286432-vecteezy_countdown-one-minute-animation-from-60-to-0-seconds_8976744.mp4"
-        },
-        /!*{
-            id: '3',
-            title: 'Upcoming Episode',
-            description: 'Working on the next episode...',
-            publishDate: '',
-            duration: '0:00',
-            status: 'draft'
 
-        }*!/
-    ]);*/
 
     const handleVideoUpload = async (file: File) => {
         try {
@@ -300,9 +270,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     const fetchRecentVideos = async (userId: string) => {
         const { data, error } = await supabase
             .from("media_files")
-            .select("file_name, public_url, uploaded_at, slug")
+            .select("file_name, public_url, uploaded_at, slug, like_count")
             .eq("user_id", userId)
-            .order("uploaded_at", { ascending: false })
+            .order("like_count", { ascending: false })
             .limit(10);
 
         if (error) {
@@ -320,6 +290,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
             createdAt: file.uploaded_at,
             publicUrl: file.public_url,
             slug: file.slug,
+            likeCount: file.like_count ?? 0
         }));
 
         setRecentVideos(recent);
@@ -327,7 +298,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     };
 
 
+    const handleLike = async (slug: string) => {
+        const { error } = await supabase.rpc("increment_like_count", { slug_input: slug });
 
+        if (error) {
+            console.error("❌ Failed to like video:", error.message);
+            return;
+        }
+
+        console.log("✅ Video liked!");
+        if (user?.id) await fetchRecentVideos(user.id); // Refresh likes
+    };
 
 
 
@@ -909,19 +890,31 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
 
                             <div className={'episodeContent'} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {recentVideos.map((video) => (
-                                    <div className={'recentVid'} key={video.name}>
-                                        <video
-                                            width="100%"
-                                            height="auto"
-                                            controls
-                                            src={video.publicUrl}
-                                        />
+                                    <div className={'recentVid'} key={video.slug}>
+                                        <video width="100%" height="auto" controls src={video.publicUrl} />
                                         <span className={'vidSpan0'}>{video.name}</span>
                                         <span className={'vidSpan1'}>
-      Uploaded on {new Date(video.createdAt).toLocaleDateString()}
-    </span>
+            Uploaded on {new Date(video.createdAt).toLocaleDateString()}
+        </span>
 
-                                        {/* ✅ Add shareable link */}
+                                        {/* Like Button */}
+                                        <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <span>❤️ {video.likeCount ?? 0} Likes</span>
+                                            <button
+                                                style={{
+                                                    background: '#f04f4f',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    padding: '0.25rem 0.5rem',
+                                                    cursor: 'pointer',
+                                                }}
+                                                onClick={() => handleLike(video.slug)}
+                                            >
+                                                Like
+                                            </button>
+                                        </div>
+                                        {/* Shareable Link */}
                                         {video.slug && (
                                             <div style={{ marginTop: '0.5rem' }}>
                                                 <a

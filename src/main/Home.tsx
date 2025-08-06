@@ -16,6 +16,9 @@ function Home() {
     const navigate = useNavigate();
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [showNavbar, setShowNavbar] = useState(false);
+    const [lastScrollY, setLastScrollY] = useState(0);
+
 
     useEffect(() => {
         const getSession = async () => {
@@ -44,12 +47,39 @@ function Home() {
             listener.subscription.unsubscribe();
         };
     }, [navigate]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+
+            // Show navbar if user is scrolling up or near the top
+            if (currentScrollY < 100) {
+                // Hide navbar near top
+                setShowNavbar(false);
+            } else if (currentScrollY > lastScrollY) {
+                // Scrolling down
+                setShowNavbar(true);
+            } else {
+                // Scrolling up
+                setShowNavbar(true);
+            }
+
+            setLastScrollY(currentScrollY);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, [lastScrollY]);
+
     if (loading) return null;
 
     return (
         <div className="container-fluid" style={{ "--bs-gutter-x": 0 } as React.CSSProperties}>
             {/* Navbar */}
-            <nav className="navbar navbar-expand-xl sticky-top bg-body-tertiary">
+            <nav className={`navbar navbar-expand-xl sticky-top bg-body-tertiary transition-navbar ${showNavbar ? 'visible' : 'hidden'}`}>
                 <div className="container-fluid px-3">
                     <a className="navbar-brand" href="#">
                         <img
@@ -70,17 +100,17 @@ function Home() {
                         <span className="navbar-toggler-icon" />
                     </button>
                     <div className="collapse navbar-collapse" id="navbarScroll">
-                        <ul
+                        {/*<ul
                             className="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll"
                             style={{ "--bs-scroll-height": "100px" } as React.CSSProperties}
                         >
                             <li className="nav-item">
-                                <a className="nav-link active" aria-current="page" href="#">Products</a>
+                                <a className="nav-link" aria-current="page" href="#">Products</a>
                             </li>
                             <li className="nav-item"><a className="nav-link" href="#">Solutions</a></li>
                             <li className="nav-item"><a className="nav-link" href="#">Pricing</a></li>
                             <li className="nav-item"><a className="nav-link" href="#">Contact</a></li>
-                        </ul>
+                        </ul>*/}
                         <div className="d-flex">
                             {!user ? (
                                 <>
@@ -151,57 +181,129 @@ function Home() {
             </nav>
 
             {/* Banner Section */}
-            <div className="banner">
-                <img className="opacity-25 img-fluid" src="/Drawable/banner.jpg" alt="Main Banner" />
-                <div className="slogan">
-                    <img className="img-fluid" src="/Drawable/PodPilot-Wordmark_black_banner.png" alt="PodPilot Slogan" />
-                    <h3>Discover True Podcasting Freedom</h3>
+            <div className="banner position-relative">
+                <video
+                    className="videoBanner w-100"
+                    autoPlay
+                    muted
+                    playsInline
+                >
+                    <source src="/Drawable/video_opening_homepg.mp4" type="video/mp4"  />
+                    Your browser does not support the video tag.
+                </video>
+
+                <div className="overlay position-absolute top-0 start-0 w-100 h-100" />
+                <div className="slogan text-center position-absolute top-50 start-50 translate-middle text-white transition-in">
+                    <img className="img-fluid mb-3" src="/Drawable/PodPilot-Wordmark_black_banner.png" alt="PodPilot Slogan" />
+                    <h3 className="text-shadow">Discover True Podcasting Freedom</h3>
                 </div>
             </div>
 
-            {/* Post Banner Section */}
-            <div className="container p-3 post_banner">
-                <p>
-                    Post your content seamlessly anywhere through one place <strong>PodPilot!</strong>
-                </p>
-                <div className="row">
-                    <div className="col-4"><img src="/Drawable/instagram.jpg" alt="Instagram" className="img-fluid" /></div>
-                    <div className="col-4"><img src="/Drawable/tiktok.jpg" alt="TikTok" className="img-fluid" /></div>
-                    <div className="col-4"><img src="/Drawable/youtube.jpg" alt="YouTube" className="img-fluid" /></div>
+            {/* Call-to-Action Section */}
+            <div className="container my-5 text-center">
+                {!user && (
+                    <>
+                        <h2 className="mb-3">Start Growing Your Podcast Today</h2>
+                        <p className="mb-4">Join PodPilot and simplify how you publish and manage your episodes.</p>
+                        <button
+                            className="btn btn-success btn-lg px-4"
+                            onClick={async () => {
+                                await supabase.auth.signInWithOAuth({
+                                    provider: 'google',
+                                    options: {
+                                        redirectTo: window.location.origin + '/onboarding',
+                                    },
+                                });
+                            }}
+                        >
+                            Get Started Free
+                        </button>
+                    </>
+                )}
+            </div>
+
+             {/*Post Banner Section*/}
+            <div className="container-fluid p-3 post_banner">
+                <div className="row" >
+                    <div className="col-5" style={{margin:'auto'}}>
+                        <h3>
+                            Share and Grow
+                        </h3>
+                        <p style={{textAlign: 'left'}}>
+                            Share your favorite video content and Podcasters on <strong>PodPilot</strong>.
+                            Enlighten yourself and others with unique ideas or views!
+                            PodPilot will increase your social reach as a Podcaster.
+                        </p>
+                        <button
+                            className="btn btn-success btn-lg px-4 txtC"
+                            onClick={async () => {
+                                await supabase.auth.signInWithOAuth({
+                                    provider: 'google',
+                                    options: {
+                                        redirectTo: window.location.origin + '/onboarding',
+                                    },
+                                });
+                            }}
+                        >
+                            Get Started Free
+                        </button>
+                    </div>
+                    <div className="col-5" style={{margin:'auto'}}>
+                        <img src="/Drawable/sharing_content.jpg" alt="Friends sharing social podcast content." className="img-fluid txtC" />
+                    </div>
+
                 </div>
             </div>
+
+
+
 
             {/* Extra Info Section */}
-            <div className="container extra_info p-2">
-                <h4>Title</h4>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor</p>
+            <div className="container extra_info p-3">
                 <div className="row p-2">
-                    <div className="col-4">
-                        <div className="card" style={{ width: "18rem" }}>
-                            <img src="..." className="card-img-top" alt="..." />
+                    <div className="col-md-4 mb-4">
+                        <div className="card h-100 shadow-sm text-center">
+                            <img src="/Drawable/one_click.png" className="card-img-top" alt="Upload" />
                             <div className="card-body">
-                                <h5 className="card-title">Card title</h5>
-                                <p className="card-text">Some quick example text to build on the card title...</p>
-                                <a href="#" className="btn btn-primary">Go somewhere</a>
+                                {/*<h5 className="card-title">One-Click Publishing</h5>*/}
+                                <p className="card-text">Distribute your podcast to all major platforms instantly from one place.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="col-md-4 mb-4">
+                        <div className="card h-100 shadow-sm text-center">
+                            <img src="/Drawable/analytics.png" className="card-img-top" alt="Analytics" />
+                            <div className="card-body">
+                                {/*<h5 className="card-title">Real-Time Analytics</h5>*/}
+                                <p className="card-text">Track listener trends, platform performance, and audience engagement.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="col-md-4 mb-4">
+                        <div className="card h-100 shadow-sm text-center">
+                            <img src="/Drawable/monetize.png" className="card-img-top" alt="Monetize" />
+                            <div className="card-body">
+                                {/*<h5 className="card-title">Monetize Effortlessly</h5>*/}
+                                <p className="card-text">Easily connect sponsors, run ads, and monetize your content directly.</p>
                             </div>
                         </div>
                     </div>
                 </div>
+
             </div>
 
             {/* Footer */}
-            <hr />
-            <footer className="container">
+            <footer className="container-fluid footer">
                 <div className="row p-2">
-                    <div className="col-3">
-                        <p>footer info</p>
-                        <ul>
-                            <li>Something</li>
-                            <li>Something</li>
-                            <li>Something</li>
-                            <li>Something</li>
-                            <li>Something</li>
-                        </ul>
+                    <div className="col-12 text-center p-1">
+                        <img src="/Drawable/PodPilot-Logo-web.png"
+                             alt="PodPilot Logo"/>
+                        <p className={'p-1'}>
+                            &#169; Copy Right 2025, Presented by PodPilot
+                        </p>
+
                     </div>
                 </div>
             </footer>

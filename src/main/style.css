@@ -678,3 +678,30 @@
         transform: translateY(0);
     }
 }
+
+.avatar-dropdown {
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem;
+    z-index: 10;
+    min-width: 120px;
+
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.dropdown-enter {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dropdown-exit {
+    opacity: 0;
+    transform: translateY(-8px);
+}

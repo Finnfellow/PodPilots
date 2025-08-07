@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect} from 'react';
 import {supabase} from '../supabaseClient.ts';
 import ImageUpload from './ImageUpload.tsx';
 import { uploadImage } from "../utils/uploadImages.ts";
@@ -7,6 +7,7 @@ import { userService, type UserProfile, type PodcastMetadata } from '../utils/cl
 import {useNavigate} from "react-router-dom";
 import {sanitizeForStorage} from "../utils/sanatizefortorage.ts";
 import '../main/style.css';
+import AvatarDropdown from './AvatarDropdown';
 
 
 
@@ -460,10 +461,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         }
     };
 
-    const getInitials = (name: string) => {
-        return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
-    };
-
     console.log("✅ Recent videos loaded:", recentVideos);
 
 
@@ -608,25 +605,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                         </button>
 
                         {/* User Avatar */}
-                        <div className={'dash_avatar'} style={{
-                            backgroundColor: avatarUrl ? 'transparent' : '#000000',
-                            backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
-                            }}>
-                            {!podcast_metadata?.avatar_url && (
-                                podcast_metadata?.name ? getInitials(podcast_metadata.name) : 'U'
-                            )}
-                        </div>
+                        <AvatarDropdown
+                            avatarUrl={avatarUrl}
+                            displayName={podcast_metadata?.name || 'User'}
+                            onLogout={handleLogout}
+                        />
 
 
 
                     </div>
                 </div>
-
-
-
-                <button className={'logout'} onClick={handleLogout}>
-                    Log&nbsp;out
-                </button>
 
             </header>
 

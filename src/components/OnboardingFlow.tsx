@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { sanitizeForStorage } from '../utils/sanatizefortorage';
@@ -17,6 +17,31 @@ type FormData = {
 
 
 const OnboardingFlow: React.FC = () => {
+    const navigate = useNavigate();
+    useEffect(() => {
+        const checkIfUserExists = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            const user = session?.user;
+
+            if (!user) return;
+
+            const { data } = await supabase
+                .from('podcast_metadata')
+                .select('id')
+                .eq('user_id', user.id)
+                .single();
+
+            if (data) {
+                alert("You already have an account. Redirecting to dashboard...");
+                navigate('/dashboard'); // ✅ now safe to call
+            } else {
+                console.log("🆕 No metadata found. Proceed with onboarding.");
+            }
+        };
+
+        checkIfUserExists();
+    }, []);
+
     const [currentStep, setCurrentStep] = useState(4);
     const [formData, setFormData] = useState<FormData>({
         podcastName: '',
@@ -30,7 +55,8 @@ const OnboardingFlow: React.FC = () => {
     const [tagInput, setTagInput] = useState('');
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-    const navigate = useNavigate();
+
+
 
 
     const updateFormData = (field: keyof FormData, value: any) => {

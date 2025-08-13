@@ -4,12 +4,10 @@ import {supabase} from '../supabaseClient.ts';
 import ImageUpload from './ImageUpload.tsx';
 import { uploadImage } from "../utils/uploadImages.ts";
 import { userService, type UserProfile, type PodcastMetadata } from '../utils/cloudStorage';
-import {useNavigate} from "react-router-dom";
+import {useLocation, useNavigate, Link} from "react-router-dom";
 import {sanitizeForStorage} from "../utils/sanatizefortorage.ts";
 import '../main/style.css';
 import AvatarDropdown from './AvatarDropdown';
-
-
 
 
 
@@ -45,8 +43,9 @@ export const getLogoPublicUrl = (path: string): string => {
     return data?.publicUrl ?? "";
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'episodes'>('overview');
+const Dashboard: React.FC<DashboardProps> = ({ }) => {
+    type Tab = 'Home' | 'episodes';
+    const [activeTab, setActiveTab] = useState<'Home' | 'episodes'>('Home');
     const navigate = useNavigate();
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [podcast_metadata, setPodcast_metadata] = useState<PodcastMetadata | null>(null);
@@ -63,6 +62,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
     >([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<PodcastMetadata[]>([]);
+    const [showNavbar, setShowNavbar] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
+
+    const [episodes, setEpisodes] = useState<Episode[]>([]);
+    const [loadingEpisodes, setLoadingEpisodes] = useState(false);
+
+    const location = useLocation();
+
+
 
 
     const handleSearch = async () => {
@@ -101,9 +109,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         }
     };
 
-
-
-
     const loadImages = async () => {
         const avatarPath = localStorage.getItem('avatarPath');
         const logoPath = localStorage.getItem('logoPath');
@@ -131,10 +136,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         navigate("/");
     };
 
-    // Define recentEpisodes
-    const [recentEpisodes] = useState<Episode[]>([]);
-
-
+   /* // Define recentEpisodes
+    const [recentEpisodes] = useState<Episode[]>([]);*/
 
     const handleVideoUpload = async (file: File) => {
         try {
@@ -188,6 +191,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
 
             console.log("✅ Video uploaded and metadata saved");
             await fetchRecentVideos(userId);
+            await fetchUserEpisodes(userId);
         } catch (err) {
             console.error("❌ Video upload failed:", err);
         }
@@ -298,6 +302,81 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
         console.log("✅ Recent videos loaded:", recent);
     };
 
+    const fetchUserEpisodes = async (userId: string) => {
+        try {
+            setLoadingEpisodes(true);
+
+            // Only select columns that actually exist in media_files.
+            // (Your logs showed `media_files.id` doesn't exist.)
+            const { data, error } = await supabase
+                .from('media_files')
+                .select('file_name, public_url, uploaded_at, slug, type')
+                .eq('user_id', userId)
+                .eq('type', 'video')
+                .order('uploaded_at', { ascending: false });
+
+            if (error) {
+                console.error('media_files error:', error.message);
+                setEpisodes([]);
+                return;
+            }
+
+            const mapped: Episode[] = (data ?? []).map((row, idx) => ({
+                // fabricate a stable id using slug or filename+index
+                id: String(row.slug ?? `${row.file_name}-${idx}`),
+                title: row.file_name?.replace(/\.[^/.]+$/, '') || `Episode ${idx + 1}`,
+                description: 'Uploaded video',
+                publishDate: (row.uploaded_at ?? '').split('T')[0] || '',
+                duration: 'N/A',
+                status: 'published',
+                videoUrl: row.public_url ?? '',
+            }));
+
+            setEpisodes(mapped);
+            console.log('🎬 Episodes loaded:', mapped.length, mapped);
+        } finally {
+            setLoadingEpisodes(false);
+        }
+    };
+
+
+
+    /*old fetcher below*/
+    /*const fetchUserEpisodes = async (userId: string) => {
+        try {
+            setLoadingEpisodes(true);
+
+            const { data, error } = await supabase
+                .from('media_files')
+                .select('id, file_name, public_url, uploaded_at')
+                .eq('user_id', userId)
+                .eq('type', 'video')
+                .order('uploaded_at', { ascending: false });
+
+            if (error) {
+                console.error('❌ fetchUserEpisodes error:', error.message);
+                return;
+            }
+
+            // Map rows -> Episode[]
+            const mapped: Episode[] = (data ?? []).map((row, idx) => ({
+                id: String(row.id ?? idx),
+                title: row.file_name?.replace(/\.[^/.]+$/, '') || `Episode ${idx + 1}`,
+                description: 'Uploaded video',
+                publishDate: row.uploaded_at?.split('T')[0] || '',
+                duration: 'N/A',
+                status: 'published' as const,
+                videoUrl: row.public_url ?? '',
+            }));
+
+            setEpisodes(mapped);
+        } finally {
+            setLoadingEpisodes(false);
+        }
+    };*/
+    /*old fetcher ends*/
+
+
 
     const handleLike = async (slug: string) => {
         const { error } = await supabase.rpc("increment_like_count", { slug_input: slug });
@@ -315,8 +394,42 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
 
     //end of new code
 
+    useEffect(() => {
+        const q = new URLSearchParams(location.search);
+        const tab = (q.get('tab') as Tab) || 'Home';
+        setActiveTab(tab);
+    }, [location.search]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+
+            // Show navbar if user is scrolling up or near the top
+            if (currentScrollY < 100) {
+                // Hide navbar near top
+                setShowNavbar(true);
+            } else if (currentScrollY > lastScrollY) {
+                // Scrolling down
+                setShowNavbar(true);
+            } else {
+                // Scrolling up
+                setShowNavbar(true);
+            }
+
+            setLastScrollY(currentScrollY);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, [lastScrollY]);
+
+
     // Load data on component mount
     useEffect(() => {
+
         const profile = userService.getUserProfile();
         const metadata = userService.getPodcastMetadata();
 
@@ -338,8 +451,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
             const currentUser = data.user;
             setUser(currentUser);
 
+
             if (currentUser?.id) {
                 await fetchRecentVideos(currentUser.id);
+                await fetchUserEpisodes(currentUser.id);
             }
 
 
@@ -362,8 +477,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
 
     // Calculate dynamic stats
     const stats: PodcastStats = {
-        totalEpisodes: recentEpisodes.length,
-        totalPlays: recentEpisodes.reduce((total, episode) =>
+        totalEpisodes: episodes.length,
+        totalPlays: episodes.reduce((total, episode) =>
             total + (episode.status === 'published' ? Math.floor(Math.random() * 100) + 10 : 0), 0
         ),
         rssUrl: `https://podpilot.com/feeds/${podcast_metadata?.name?.toLowerCase().replace(/\s+/g, '-') || 'your-podcast'}.xml`
@@ -404,7 +519,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
             avatar_url:  avatarUrl || podcast_metadata?.avatar_url || '',
             created_at:  podcast_metadata?.created_at || new Date().toISOString(),
             updated_at:  new Date().toISOString(),
-            user_id:     user.id                   // <- camelCase for frontend
+            user_id:     user.id// <- camelCase for frontend
         };
 
         try {
@@ -463,7 +578,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
 
     console.log("✅ Recent videos loaded:", recentVideos);
 
-
     return (
         <div className={"mainReturn"}>
             {/* Welcome Toast */}
@@ -514,19 +628,136 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
             {/* Header */}
             <header className={'dashboard_header'}>
 
-                <div className={'dash_nav'}>
+                <nav className={`navbar navbar-expand-xl sticky-top transition-navbar ${showNavbar ? 'visible' : 'hidden'}`}>
+                    <div className="container-fluid px-3">
+                        <Link className="navbar-brand" to="/dashboard?tab=Home">
+                            <img className="img-fluid" src="/Drawable/PodPilot-Logo-web.png" alt="PodPilot Logo" />
+                        </Link>
+
+                        <button
+                            className="navbar-toggler"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#navbarScroll"
+                            aria-controls="navbarScroll"
+                            aria-expanded="false"
+                            aria-label="Toggle navigation"
+                        >
+                            <span className="navbar-toggler-icon" />
+                        </button>
+                        <div className="collapse navbar-collapse" id="navbarScroll">
+                            <div className="d-flex p-1">
+                                {(['Home', 'episodes'] as Tab[]).map((tab) => (
+                                    <button  key={tab}
+                                             className={`navi_buttons ${activeTab === tab ? 'active' : ''}`}
+                                             onClick={() => {
+                                                 setActiveTab(tab);
+                                                 navigate(`?tab=${tab}`, { replace: false });
+                                             }}>
+                                        {tab}
+                                    </button>
+
+
+                                ))}
+                            </div>
+
+                            <div className="d-flex p-1">
+                                <form
+                                      onSubmit={(e) => {
+                                          e.preventDefault();
+                                          handleSearch(); // this will be defined later
+                                      }}
+                                      style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                >
+                                    <input
+                                        type="text"
+                                        placeholder="Search podcasters"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        style={{
+                                            padding: '0.5rem',
+                                            borderRadius: '8px',
+                                            border: '1px solid #ccc',
+                                            fontFamily: 'Satoshi, sans-serif'
+                                        }}
+                                    />
+
+                                    {searchResults.length > 0 && (
+                                        <div className="search-dropdown">
+                                            {searchResults.map((result) => (
+                                                <div
+                                                    key={result.id}
+                                                    className="search-result-item"
+                                                    onClick={() => {
+                                                        // Example: navigate to a podcaster page
+                                                        navigate(`/podcasters/${result.user_id}`);
+                                                    }}
+                                                >
+                                                    <img
+                                                        src={result.avatar_url || '/default-avatar.png'}
+                                                        alt="avatar"
+                                                        className="search-avatar"
+                                                    />
+                                                    <div>
+                                                        <div className="search-name">{result.display_name}</div>
+                                                        <div className="search-description">
+                                                            {result.description?.slice(0, 60)}...
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        style={{
+                                            padding: '0.5rem 1rem',
+                                            backgroundColor: '#1A8C67',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        Search
+                                    </button>
+                                </form>
+                            </div>
+
+
+                            <div className="d-flex p-1">
+                                {/* User Avatar */}
+                                <AvatarDropdown
+                                    avatarUrl={avatarUrl}
+                                    displayName={podcast_metadata?.name || 'User'}
+                                    onLogout={handleLogout}
+                                />
+
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                {/* old nav below */}
+
+                {/*<div className={'dash_nav'}>
 
                     <div className={'dash_opt_0'}>
+
+                        <a className={'dashboard_nav'} href="./Dashboard.tsx">
+                            <img className="img-fluid" src="/Drawable/PodPilot-Logo-web.png" alt="PodPilot Logo"/>
+                        </a>
 
                         <h1>
                             {podcast_metadata?.name || 'PodPilot'}
                         </h1>
 
                         <nav className={'navi'}>
-                            {['overview', 'episodes'].map((tab) => (
+                            {['Home', 'episodes'].map((tab) => (
                                 <button className={`navi_buttons ${activeTab === tab ? 'active' : ''}`}
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab as 'overview' | 'episodes')}>
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab as 'Home' | 'episodes')}>
                                     {tab}
                                 </button>
 
@@ -604,7 +835,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                             Upload Episode
                         </button>
 
-                        {/* User Avatar */}
+                         User Avatar
                         <AvatarDropdown
                             avatarUrl={avatarUrl}
                             displayName={podcast_metadata?.name || 'User'}
@@ -614,7 +845,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
 
 
                     </div>
-                </div>
+                </div>*/}
+
+                {/* old nav ends */}
 
             </header>
 
@@ -661,7 +894,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
             {/* Main Content */}
             <main className={'mainSec'}>
 
-                {activeTab === 'overview' && (
+                {activeTab === 'Home' && (
                     <div>
                         {/* Welcome, Section */}
                         <div className={'welcomeSec'}>
@@ -671,7 +904,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                         Welcome back, {podcast_metadata?.name || 'Creator'}! 👋
                                     </h2>
                                     <p>
-                                        {podcast_metadata?.description || 'Upload episodes, manage your RSS feed, and let listeners discover your content.'}
+                                        {podcast_metadata?.description || 'Upload episodes, and let listeners discover your content.'}
                                     </p>
                                 </div>
                                 {/*<button
@@ -858,14 +1091,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                 </p>
                             </div>
 
-                            <div className={'statHolder'}>
+                            {/*<div className={'statHolder'}>
                                 <h3>
                                     Total Plays
                                 </h3>
                                 <p>
                                     {stats.totalPlays.toLocaleString()}
                                 </p>
-                            </div>
+                            </div>*/}
 
 
                         </div>
@@ -875,6 +1108,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                             <h2>
                                 Your Episodes
                             </h2>
+                            <p>
+                                <em>Episodes with the most likes will automatically show towards the top of this list!</em>
+                            </p>
 
                             <div className={'episodeContent'} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {recentVideos.map((video) => (
@@ -882,15 +1118,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                                         <video width="100%" height="auto" controls src={video.publicUrl} />
                                         <span className={'vidSpan0'}>{video.name}</span>
                                         <span className={'vidSpan1'}>
-            Uploaded on {new Date(video.createdAt).toLocaleDateString()}
-        </span>
+                                            Uploaded on {new Date(video.createdAt).toLocaleDateString()}
+                                        </span>
 
                                         {/* Like Button */}
                                         <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <span>❤️ {video.likeCount ?? 0} Likes</span>
                                             <button
                                                 style={{
-                                                    background: '#f04f4f',
+                                                    background: 'rgba(240,79,79,0)',
                                                     color: 'white',
                                                     border: 'none',
                                                     borderRadius: '4px',
@@ -928,56 +1164,54 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToUpload }) => {
                     <div className={'actEpisodeContent'}>
                         <div className={'actEpisodeItem0'}>
                             <h2>
-                                Manage Episodes
+                                Your Collection of Episodes
                             </h2>
-                            <button onClick={onNavigateToUpload}>
+                            {/*<button onClick={onNavigateToUpload}>
                                 Upload Episode
-                            </button>
+                            </button>*/}
                         </div>
 
                         <div className={'actEpisodeItem1'}>
                             <div className={'actEpiSubItem0'}>
-                                {recentEpisodes.map((episode: Episode) => (
+                                {loadingEpisodes && <div className={'aeSubItem0'}>Loading your episodes…</div>}
+                                {!loadingEpisodes && episodes.length === 0 && (
+                                    <div className={'aeSubItem0'}>No episodes yet. Try uploading a video!</div>
+                                )}
+
+                                {!loadingEpisodes && episodes.map((episode: Episode) => (
                                     <div className={'aeSubItem0'} key={episode.id}>
                                         <div className={'aeSubItemContent'}>
-                                            <h3>
-                                                {episode.title}
-                                            </h3>
-                                            <p>
-                                                {episode.description}
-                                            </p>
+                                            <h3>{episode.title}</h3>
+                                            <p>{episode.description}</p>
 
-                                            {episode.status === 'published' && episode.audioFile && (
+                                            {/* Show video if present */}
+                                            {episode.videoUrl && (
                                                 <div className={'aeSubItem1'}>
-                                                    <audio controls>
-                                                        <source src={`/audio/${episode.audioFile}`} type="audio/mpeg" />
-                                                        Your browser does not support the audio element.
-                                                    </audio>
+                                                    <video controls width="100%" style={{ maxWidth: 600, borderRadius: 8 }}>
+                                                        <source src={episode.videoUrl} type="video/mp4" />
+                                                        Your browser does not support the video tag.
+                                                    </video>
                                                 </div>
                                             )}
 
                                             <div className={'aeSubItem2'}>
-                                                <span>Duration: {episode.duration}</span>
+                                                {/*<span>Duration: {episode.duration}</span>*/}
                                                 <span>{episode.publishDate ? `Published: ${episode.publishDate}` : 'Unpublished'}</span>
                                             </div>
                                         </div>
 
                                         <div className={'aeSubItemContent0'}>
                                             <span style={{
-                                                backgroundColor: getStatusColor(episode.status) + '20',
-                                                color: getStatusColor(episode.status)
-                                            }}>
+                                              backgroundColor: getStatusColor(episode.status) + '20',
+                                              color: getStatusColor(episode.status)
+                                                }}>
                                                 {getStatusText(episode.status)}
                                             </span>
 
-                                            <div className={'aeSubItem00'}>
-                                                <button className={'btn0'}>
-                                                    Edit
-                                                </button>
-                                                <button className={'btn1'}>
-                                                    ⋯
-                                                </button>
-                                            </div>
+                                            {/*<div className={'aeSubItem00'}>
+                                                <button className={'btn0'}>Edit</button>
+                                                <button className={'btn1'}>⋯</button>
+                                            </div>*/}
                                         </div>
                                     </div>
                                 ))}

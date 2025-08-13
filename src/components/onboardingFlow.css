@@ -1,0 +1,288 @@
+/* Container layout */
+.onboarding-container {
+    min-height: 100vh;
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Card Styling */
+.onboarding-card {
+    background-color: white;
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    width: 100%;
+    max-width: 520px;
+    border: 1px solid #eaeaea;
+    transition: all 0.3s ease;
+}
+
+/* Header */
+.logo-section {
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
+
+.logo-text {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.step-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    text-align: center;
+}
+
+.step-subtitle {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+.top-step-indicator {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #4285f4;
+}
+.step-indicator {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.step-text {
+    font-size: 1.2rem;        /* Increase size */
+    font-weight: 600;
+    color: #1a73e8;
+    background-color: #eaf1fb;
+    padding: 0.75rem 1.5rem;
+    border-radius: 24px;
+    display: inline-block;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #4285f4;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Form Inputs */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    transition: border-color 0.3s ease;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+    border-color: #4285f4;
+    outline: none;
+}
+
+/* Tag Input */
+.tag-input-container {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.add-tag-btn {
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.add-tag-btn:hover {
+    background-color: #3367d6;
+}
+
+.tags-container {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag {
+    background-color: #eaf1fb;
+    color: #333;
+    padding: 0.4rem 0.75rem;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.remove-tag {
+    background: none;
+    border: none;
+    color: #888;
+    margin-left: 0.5rem;
+    cursor: pointer;
+}
+
+/* Upload area */
+.upload-area {
+    border: 2px dashed #ccc;
+    padding: 1rem;
+    text-align: center;
+    color: #666;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.upload-area:hover {
+    border-color: #4285f4;
+}
+
+.file-preview {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: #28a745;
+}
+
+/* Social Connections */
+.social-connections {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.connection-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.connection-desc {
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.connection-btn {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #4285f4;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background-color: transparent;
+    color: #4285f4;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.connection-btn.connected {
+    background-color: #4285f4;
+    color: white;
+}
+
+/* CTA Box */
+.launch-box {
+    background-color: #f8f9ff;
+    border: 1px solid #4285f4;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.rocket-icon {
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Navigation Buttons */
+.navigation-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+}
+
+.nav-btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+}
+
+.nav-btn.primary {
+    background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+    color: white;
+}
+
+.nav-btn.secondary {
+    background-color: #f1f3f4;
+    color: #333;
+}
+
+/* Skip Text */
+.skip-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+/* Avatar Upload Section */
+.avatar-section {
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.avatar-preview {
+    margin-top: 1rem;
+    max-width: 100px;
+    max-height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-upload-label {
+    display: inline-block;
+    padding: 0.6rem 1rem;
+    background-color: #f1f3f4;
+    color: #333;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 1rem;
+}
+
+.avatar-upload-label:hover {
+    background-color: #e0e0e0;
+}
+
+

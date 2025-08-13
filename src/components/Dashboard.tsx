@@ -71,7 +71,27 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
     const location = useLocation();
     const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        // ✅ STEP 2: Fetch the latest podcast metadata on mount
+        const fetchMetadata = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
 
+            const { data, error } = await supabase
+                .from('podcast_metadata')
+                .select('*')
+                .eq('user_id', user.id)
+                .single();
+
+            if (error) {
+                console.error('❌ Failed to fetch podcast metadata:', error.message);
+            } else {
+                setPodcast_metadata(data);
+            }
+        };
+
+        fetchMetadata();
+    }, []);
 
     const handleSearch = async () => {
         try {
@@ -212,6 +232,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
             localStorage.setItem("avatarPath", path); // <-- this is new
 
             // ✅ Update state for immediate display
+            setAvatarUrl(url);
             setUserProfile((prev) =>
                 prev ? { ...prev, avatarUrl: url ?? undefined } : prev
             );

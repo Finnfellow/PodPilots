@@ -69,7 +69,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
     const [loadingEpisodes, setLoadingEpisodes] = useState(false);
 
     const location = useLocation();
-
+    const [loading, setLoading] = useState(true);
 
 
 
@@ -135,7 +135,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         await supabase.auth.signOut();
         navigate("/");
     };
-
+0
    /* // Define recentEpisodes
     const [recentEpisodes] = useState<Episode[]>([]);*/
 
@@ -339,45 +339,6 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         }
     };
 
-
-
-    /*old fetcher below*/
-    /*const fetchUserEpisodes = async (userId: string) => {
-        try {
-            setLoadingEpisodes(true);
-
-            const { data, error } = await supabase
-                .from('media_files')
-                .select('id, file_name, public_url, uploaded_at')
-                .eq('user_id', userId)
-                .eq('type', 'video')
-                .order('uploaded_at', { ascending: false });
-
-            if (error) {
-                console.error('❌ fetchUserEpisodes error:', error.message);
-                return;
-            }
-
-            // Map rows -> Episode[]
-            const mapped: Episode[] = (data ?? []).map((row, idx) => ({
-                id: String(row.id ?? idx),
-                title: row.file_name?.replace(/\.[^/.]+$/, '') || `Episode ${idx + 1}`,
-                description: 'Uploaded video',
-                publishDate: row.uploaded_at?.split('T')[0] || '',
-                duration: 'N/A',
-                status: 'published' as const,
-                videoUrl: row.public_url ?? '',
-            }));
-
-            setEpisodes(mapped);
-        } finally {
-            setLoadingEpisodes(false);
-        }
-    };*/
-    /*old fetcher ends*/
-
-
-
     const handleLike = async (slug: string) => {
         const { error } = await supabase.rpc("increment_like_count", { slug_input: slug });
 
@@ -447,10 +408,12 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
 
         // ✅ NEW: Fetch user from Supabase and store in local state
         const fetchUser = async () => {
-            const { data } = await supabase.auth.getUser();
-            const currentUser = data.user;
-            setUser(currentUser);
+            const { data: sessionData } = await supabase.auth.getSession();
+            const currentUser = sessionData?.session?.user;
+            setUser(sessionData?.session?.user ?? null);
 
+
+            console.log('🔁 Session after refresh:', sessionData?.session);
 
             if (currentUser?.id) {
                 await fetchRecentVideos(currentUser.id);
@@ -460,9 +423,16 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
 
             // ✅ Load avatar/logo from localStorage once user is known
             await loadImages();
+            setLoading(false);
         };
 
         fetchUser();
+
+        const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+        });
+
+
 
 
         // Check if this is a fresh login (show welcome)
@@ -473,7 +443,14 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
             // Auto-hide welcome after 5 seconds
             setTimeout(() => setShowWelcome(false), 5000);
         }
+        return () => {
+            listener?.subscription?.unsubscribe?.();
+        };
     }, []);
+    if (loading) {
+        return <div>Loading...</div>; // Or show a fancy spinner here
+    }
+
 
     // Calculate dynamic stats
     const stats: PodcastStats = {

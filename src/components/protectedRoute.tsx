@@ -1,4 +1,4 @@
-import {type JSX, useEffect, useState} from "react";
+import { type JSX, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
@@ -16,7 +16,13 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
         getSession();
     }, []);
 
-    if (loading) return null;
+    if (loading) {
+        return <div>Loading protected content...</div>; // Or a spinner
+    }
 
-    return user ? children : <Navigate to="/" replace />;
+    if (!user) {
+        return <Navigate to="/" replace />;
+    }
+
+    return children;
 }

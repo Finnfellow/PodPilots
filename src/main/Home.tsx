@@ -121,7 +121,10 @@ function Home() {
                                             await supabase.auth.signInWithOAuth({
                                                 provider: 'google',
                                                 options: {
-                                                    redirectTo: window.location.origin + '/dashboard',
+                                                    redirectTo: 'http://localhost:4173/dashboard',
+                                                    queryParams: {
+                                                        prompt: 'login'  // 👈 force the login dialog every time
+                                                    }
                                                 },
                                             });
                                         }}

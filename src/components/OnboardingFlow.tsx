@@ -89,6 +89,7 @@ const OnboardingFlow: React.FC = () => {
                 .from('podcast_metadata')
                 .upsert([{
                     name: podcastName,
+                    display_name: podcastName,
                     description,
                     tag: tags,
                     logo_url: logoUrl,
@@ -105,6 +106,7 @@ const OnboardingFlow: React.FC = () => {
             localStorage.setItem('justCompletedOnboarding', 'true');
             localStorage.setItem('podcastMetadata', JSON.stringify({
                 name: podcastName,
+                display_name: podcastName,
                 description,
                 tag: tags,
                 logo_url: logoUrl,

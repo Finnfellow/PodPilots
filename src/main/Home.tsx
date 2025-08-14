@@ -39,7 +39,10 @@ function Home() {
 
             // ✅ only redirect AFTER login event
             if (event === 'SIGNED_IN' && sessionUser) {
-                navigate("/dashboard");
+                const currentPath = window.location.pathname;
+                if (!currentPath.includes('/onboarding')) {
+                    navigate("/dashboard");
+                }
             }
         });
 
@@ -100,17 +103,7 @@ function Home() {
                         <span className="navbar-toggler-icon" />
                     </button>
                     <div className="collapse navbar-collapse" id="navbarScroll">
-                        {/*<ul
-                            className="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll"
-                            style={{ "--bs-scroll-height": "100px" } as React.CSSProperties}
-                        >
-                            <li className="nav-item">
-                                <a className="nav-link" aria-current="page" href="#">Products</a>
-                            </li>
-                            <li className="nav-item"><a className="nav-link" href="#">Solutions</a></li>
-                            <li className="nav-item"><a className="nav-link" href="#">Pricing</a></li>
-                            <li className="nav-item"><a className="nav-link" href="#">Contact</a></li>
-                        </ul>*/}
+
                         <div className="d-flex">
                             {!user ? (
                                 <>
@@ -121,7 +114,10 @@ function Home() {
                                             await supabase.auth.signInWithOAuth({
                                                 provider: 'google',
                                                 options: {
-                                                    redirectTo: window.location.origin + '/dashboard',
+                                                    redirectTo: 'http://localhost:4173/dashboard',
+                                                    queryParams: {
+                                                        prompt: 'login'  // 👈 force the login dialog every time
+                                                    }
                                                 },
                                             });
                                         }}
@@ -136,7 +132,10 @@ function Home() {
                                             await supabase.auth.signInWithOAuth({
                                                 provider: 'google',
                                                 options: {
-                                                    redirectTo: window.location.origin + '/onboarding',
+                                                    redirectTo: `${window.location.origin}/onboarding`,
+                                                    queryParams: {
+                                                        prompt: 'login' // ✅ This forces user selection each time
+                                                    }
                                                 },
                                             });
                                         }}

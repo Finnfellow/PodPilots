@@ -56,6 +56,12 @@ const OnboardingFlow: React.FC = () => {
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
+    /*new code*/
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    /*end*/
+
+
 
 
 
@@ -85,6 +91,9 @@ const OnboardingFlow: React.FC = () => {
 
     const handleSubmit = async () => {
         try {
+            setSubmitError(null);
+            setSubmitting(true);
+
             const { podcastName, description, tags, logo } = formData;
 
             const { data: authData } = await supabase.auth.getUser();
@@ -294,10 +303,131 @@ const OnboardingFlow: React.FC = () => {
         </div>
     );
 
+
     const renderStep6 = () => (
         <div className="onboarding-card">
-            <h2>🔗 Connect Your Platforms</h2>
-            <p>Link your social accounts for easy publishing (optional)</p>
+            <h2>✅ Review & Launch</h2>
+            <p>Double-check your podcast details before launching.</p>
+
+            {/* Optional inline error */}
+            {submitError && (
+                <div style={{ color: '#b00020', margin: '0 0 12px' }}>
+                    {submitError}
+                </div>
+            )}
+
+            <div className="review-grid" style={{ display: 'grid', gap: '16px' }}>
+                {/* Name */}
+                <section className="review-section" style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 8, padding: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                        <h4 style={{ margin: 0 }}>Podcast name</h4>
+                        <button type="button" className="link-btn" onClick={() => setCurrentStep(4)} style={{ background: 'none', border: 'none', color: '#1A8C67', cursor: 'pointer' }}>
+                            Edit
+                        </button>
+                    </div>
+                    <div className="review-value" style={{ marginTop: 8, fontWeight: 600 }}>
+                        {formData.podcastName || '—'}
+                    </div>
+                </section>
+
+                {/* Description */}
+                <section className="review-section" style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 8, padding: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                        <h4 style={{ margin: 0 }}>Description</h4>
+                        <button type="button" className="link-btn" onClick={() => setCurrentStep(4)} style={{ background: 'none', border: 'none', color: '#1A8C67', cursor: 'pointer' }}>
+                            Edit
+                        </button>
+                    </div>
+                    <p style={{ marginTop: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                        {formData.description || '—'}
+                    </p>
+                </section>
+
+                {/* Tags */}
+                <section className="review-section" style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 8, padding: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                        <h4 style={{ margin: 0 }}>Tags</h4>
+                        <button type="button" className="link-btn" onClick={() => setCurrentStep(4)} style={{ background: 'none', border: 'none', color: '#1A8C67', cursor: 'pointer' }}>
+                            Edit
+                        </button>
+                    </div>
+                    {formData.tags.length > 0 ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                            {formData.tags.map((t, i) => (
+                                <span key={i} style={{ padding: '4px 10px', background: '#F0F7F4', color: '#1A8C67', border: '1px solid #D9EFE5', borderRadius: 999, fontSize: 12 }}>
+                {t}
+              </span>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ marginTop: 8 }}>—</div>
+                    )}
+                </section>
+
+                {/* Logo + Avatar */}
+                <section className="review-section" style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 8, padding: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                        <h4 style={{ margin: 0 }}>Branding</h4>
+                        <button type="button" className="link-btn" onClick={() => setCurrentStep(5)} style={{ background: 'none', border: 'none', color: '#1A8C67', cursor: 'pointer' }}>
+                            Edit
+                        </button>
+                    </div>
+
+                    <div className="review-media" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 12 }}>
+                        <div>
+                            <div style={{ fontSize: 12, color: '#6c757d' }}>Logo</div>
+                            {logoPreview ? (
+                                <img src={logoPreview} alt="Logo preview" style={{ marginTop: 8, maxHeight: 120, width: 'auto' }} />
+                            ) : (
+                                <div style={{ marginTop: 8, color: '#6c757d' }}>No logo selected</div>
+                            )}
+                        </div>
+
+                        <div>
+                            <div style={{ fontSize: 12, color: '#6c757d' }}>Avatar</div>
+                            {avatarPreview ? (
+                                <img
+                                    src={avatarPreview}
+                                    alt="Avatar preview"
+                                    style={{ marginTop: 8, width: 64, height: 64, objectFit: 'cover', borderRadius: '50%' }}
+                                />
+                            ) : (
+                                <div style={{ marginTop: 8, color: '#6c757d' }}>No avatar selected</div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div className="launch-box" style={{ marginTop: 16, background: '#F8FFF9', border: '1px solid #E2F5E8', borderRadius: 12, padding: 16, textAlign: 'center' }}>
+                <div className="rocket-icon" style={{ fontSize: 28, marginBottom: 8 }}>🚀</div>
+                <h3 style={{ margin: 0 }}>You're ready for takeoff!</h3>
+                <p style={{ marginTop: 6, color: '#495057' }}>Everything’s set up. Launch your dashboard to get started.</p>
+            </div>
+
+            <div className="navigation-buttons" style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                <button onClick={prevStep} className="nav-btn secondary">Previous</button>
+                <button
+                    onClick={handleSubmit}
+                    className="nav-btn primary"
+                    disabled={
+                        submitting ||
+                        !formData.podcastName.trim() ||
+                        !formData.description.trim()
+                    }
+                >
+                    {submitting ? 'Saving…' : 'Launch Dashboard 🚀'}
+                </button>
+            </div>
+        </div>
+    );
+
+
+
+    /*const renderStep6 = () => (
+        <div className="onboarding-card">
+            <h2>Review</h2>
+            <p>Please review your information. If you must correct a field, please click <strong>previous</strong> to go back.</p>
 
             <div className="social-connections">
                 {["youtubeConnected", "instagramConnected"].map((platform) => {
@@ -328,7 +458,7 @@ const OnboardingFlow: React.FC = () => {
                 <button onClick={handleSubmit} className="nav-btn primary">Launch Dashboard 🚀</button>
             </div>
         </div>
-    );
+    );*/
 
     const renderCurrentStep = () => {
         switch (currentStep) {

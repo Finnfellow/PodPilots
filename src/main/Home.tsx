@@ -20,6 +20,68 @@ function Home() {
     const [lastScrollY, setLastScrollY] = useState(0);
 
 
+    // Auth modal state (email-first)
+    const [authOpen, setAuthOpen] = useState<null | 'login' | 'signup'>(null);
+    const [authEmail, setAuthEmail] = useState('');
+    const [authPassword, setAuthPassword] = useState('');
+    const [authLoading, setAuthLoading] = useState(false);
+    const [authError, setAuthError] = useState<string | null>(null);
+
+    const openAuth = (mode: 'login' | 'signup') => {
+        setAuthError(null);
+        setAuthEmail('');
+        setAuthPassword('');
+        setAuthOpen(mode);
+    };
+
+    const closeAuth = () => {
+        if (authLoading) return;
+        setAuthOpen(null);
+    };
+
+    const handleEmailAuth = async () => {
+        try {
+            setAuthLoading(true);
+            setAuthError(null);
+
+            if (authOpen === 'signup') {
+                const { error } = await supabase.auth.signUp({
+                    email: authEmail,
+                    password: authPassword,
+                    options: { emailRedirectTo: `${window.location.origin}/onboarding` },
+                });
+                if (error) throw error;
+                alert('Check your email to confirm your account.');
+            } else {
+                const { error } = await supabase.auth.signInWithPassword({
+                    email: authEmail,
+                    password: authPassword,
+                });
+                if (error) throw error;
+            }
+
+            closeAuth();
+        } catch (e: any) {
+            setAuthError(e?.message || 'Something went wrong');
+        } finally {
+            setAuthLoading(false);
+        }
+    };
+
+
+// Keep Google as secondary option
+    const signInWithGoogle = async () => {
+        await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: `${window.location.origin}/dashboard`,
+                // remove 'prompt: login' so Google isn't forced every time
+            },
+        });
+    };
+
+
+
     useEffect(() => {
         const getSession = async () => {
             const { data } = await supabase.auth.getSession();
@@ -105,7 +167,8 @@ function Home() {
                     <div className="collapse navbar-collapse" id="navbarScroll">
 
                         <div className="d-flex">
-                            {!user ? (
+
+                            {/*{!user ? (
                                 <>
                                     <button
                                         id="loginButton"
@@ -139,6 +202,25 @@ function Home() {
                                                 },
                                             });
                                         }}
+                                    >
+                                        Sign Up
+                                    </button>
+                                </>
+                            ) : (*/}
+                            {!user ? (
+                                <>
+                                    <button
+                                        id="loginButton"
+                                        className="btn btn-outline-success m-1"
+                                        onClick={() => openAuth('login')}
+                                    >
+                                        Login
+                                    </button>
+
+                                    <button
+                                        id="signUpButton"
+                                        className="btn btn-outline-success m-1"
+                                        onClick={() => openAuth('signup')}
                                     >
                                         Sign Up
                                     </button>
@@ -204,7 +286,7 @@ function Home() {
                     <>
                         <h2 className="mb-3">Start Growing Your Podcast Today</h2>
                         <p className="mb-4">Join PodPilot and simplify how you publish and manage your episodes.</p>
-                        <button
+                        {/*<button
                             className="btn btn-success btn-lg px-4"
                             onClick={async () => {
                                 await supabase.auth.signInWithOAuth({
@@ -216,7 +298,14 @@ function Home() {
                             }}
                         >
                             Get Started Free
+                        </button>*/}
+                        <button
+                            className="btn btn-success btn-lg px-4"
+                            onClick={() => openAuth('signup')}
+                        >
+                            Get Started Free
                         </button>
+
                     </>
                 )}
             </div>
@@ -292,6 +381,86 @@ function Home() {
                 </div>
 
             </div>
+
+            {authOpen && (
+                <div
+                    className="modal fade show"
+                    role="dialog"
+                    style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}
+                    aria-modal="true"
+                >
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">
+                                    {authOpen === 'signup' ? 'Create your account' : 'Welcome back'}
+                                </h5>
+                                <button type="button" className="btn-close" onClick={closeAuth} />
+                            </div>
+
+                            <div className="modal-body">
+                                {authError && (
+                                    <div className="alert alert-danger" role="alert">
+                                        {authError}
+                                    </div>
+                                )}
+
+                                <div className="mb-3">
+                                    <label className="form-label">Email</label>
+                                    <input
+                                        type="email"
+                                        className="form-control"
+                                        value={authEmail}
+                                        onChange={(e) => setAuthEmail(e.target.value)}
+                                        placeholder="you@example.com"
+                                        autoFocus
+                                    />
+                                </div>
+
+                                {/* Hide this block if you prefer magic-link only */}
+                                <div className="mb-3">
+                                    <label className="form-label">Password</label>
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        value={authPassword}
+                                        onChange={(e) => setAuthPassword(e.target.value)}
+                                        placeholder="Enter a strong password"
+                                    />
+                                </div>
+
+                                <button
+                                    className="btn btn-success w-100 mb-2"
+                                    onClick={handleEmailAuth}
+                                    disabled={authLoading || !authEmail || (authOpen === 'signup' && !authPassword)}
+                                >
+                                    {authLoading ? 'Please wait…' : (authOpen === 'signup' ? 'Create account' : 'Log in')}
+                                </button>
+
+                                {/* OPTIONAL Magic link alternative */}
+                                {/* <button
+            className="btn btn-outline-secondary w-100 mb-3"
+            onClick={handleMagicLink}
+            disabled={authLoading || !authEmail}
+          >
+            Send me a magic link
+          </button> */}
+
+                                <div className="text-center text-muted my-2">or</div>
+
+                                <button
+                                    className="btn btn-outline-dark w-100"
+                                    onClick={signInWithGoogle}
+                                    disabled={authLoading}
+                                >
+                                    Continue with Google
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
             {/* Footer */}
             <footer className="container-fluid footer">

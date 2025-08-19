@@ -720,3 +720,23 @@
     opacity: 0;
     transform: translateY(-8px);
 }
+
+.vidShare{
+    margin-top: 0.5rem;
+}
+
+.vidShare a{
+    font-size: 12pt;
+    color: #000;
+    text-decoration: none;
+}
+
+.vidShare img{
+    width: 2vh;
+    margin: 0.5rem;
+}
+
+.videoDragDrop{
+    width: fit-content;
+    margin: auto;
+}

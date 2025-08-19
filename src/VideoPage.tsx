@@ -1,22 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase} from "./supabaseClient.ts";
 
 const VideoPage: React.FC = () => {
     const { slug } = useParams();
+    const navigate = useNavigate();
     const [videoData, setVideoData] = useState<{
         title: string;
         description: string;
         public_url: string;
         uploaded_at: string;
+        user_id?: string;
     } | null>(null);
     const [loading, setLoading] = useState(true);
+
 
     useEffect(() => {
         const fetchVideo = async () => {
             const { data, error } = await supabase
                 .from('media_files')
-                .select('file_name, public_url, uploaded_at, ep_title, ep_description')
+                .select('file_name, public_url, uploaded_at, ep_title, ep_description, user_id')
                 .eq('slug', slug)
                 .single();
 
@@ -31,6 +34,7 @@ const VideoPage: React.FC = () => {
                 description: data.ep_description || '',
                 public_url: data.public_url,
                 uploaded_at: data.uploaded_at,
+                user_id: data.user_id,
             });
             setLoading(false);
         };
@@ -70,6 +74,28 @@ const VideoPage: React.FC = () => {
                 }}
             >
                 📋 Copy Shareable Link
+            </button>
+            <button
+                onClick={() => {
+                    if (videoData?.user_id) {
+                        navigate(`/profile/${videoData.user_id}`);
+                    } else {
+                        alert("Creator profile not found");
+                    }
+                }}
+                style={{
+                    marginTop: '1rem',
+                    marginLeft: '1rem',
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#34A853',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                }}
+            >
+                👤 View Creator Profile
             </button>
         </div>
     );

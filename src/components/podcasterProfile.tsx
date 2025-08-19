@@ -141,6 +141,18 @@ const PodcasterProfile: React.FC = () => {
                                             Like
                                         </button>
                                     </div>
+
+                                    {video.slug && (
+                                        <div className={'vidShare'}>
+                                            <a
+                                                href={`/videos/${video.slug}`}
+                                                target="_self"
+                                                rel="noopener noreferrer"
+                                            >
+                                                <img className={'img-fluid'} src="/Drawable/share.png" alt="Share by Pexel Perfect"/> Share
+                                            </a>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

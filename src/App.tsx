@@ -29,6 +29,8 @@ function App() {
             <Route path="/podcasters/:user_id" element={<PodcasterProfile />} />
             <Route path="/callback" element={<Callback />} />
             <Route path="/videos/:slug" element={<VideoPage />} />
+            <Route path="/profile/:user_id" element={<PodcasterProfile />} />
+
         </Routes>
     );
 }

@@ -10,10 +10,9 @@ import '../main/style.css';
 import AvatarDropdown from './AvatarDropdown';
 
 
-
-
 interface Episode {
     id: string;
+    slug: string;
     title: string;
     description: string;
     publishDate: string;
@@ -61,7 +60,29 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         { name: string; createdAt: string; publicUrl: string; slug: string; likeCount: number }[]
     >([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchResults, setSearchResults] = useState<PodcastMetadata[]>([]);
+
+    /*const [searchResults, setSearchResults] = useState<PodcastMetadata[]>([]);*/
+    type SearchResult =
+        | {
+        type: 'creator';
+        id: string;
+        user_id: string;
+        display_name: string | null;
+        avatar_url: string | null;
+        description: string | null;
+    }
+        | {
+        type: 'video';
+        slug: string;
+        title: string;
+        description: string | null;
+        public_url: string | null;
+    };
+
+    const [results, setResults] = useState<SearchResult[]>([]);
+    const [searching, setSearching] = useState(false);
+
+
     const [showNavbar, setShowNavbar] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -70,6 +91,80 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
 
     const location = useLocation();
     const [loading, setLoading] = useState(true);
+
+    // ADD: modal & pending upload state
+    const [showTitleModal, setShowTitleModal] = useState(false);
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
+    const [pendingTitle, setPendingTitle] = useState<string>('');
+    const [uploading, setUploading] = useState(false);
+
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editingEpisode, setEditingEpisode] = useState<Episode | null>(null);
+    const [editingTitle, setEditingTitle] = useState('');
+    const [savingTitle, setSavingTitle] = useState(false);
+
+    const openEditTitle = (ep: Episode) => {
+        setEditingEpisode(ep);
+        setEditingTitle(ep.title);
+        setEditModalOpen(true);
+    };
+
+    const saveEditedTitle = async () => {
+        if (!editingEpisode) return;
+        const newTitle = editingTitle.trim();
+        if (!newTitle) return;
+
+        try {
+            setSavingTitle(true);
+
+            // Optional: if you keep updated_at in the table, leave it.
+            // If you don't have that column, REMOVE updated_at from the update payload.
+            const updatePayload: Record<string, any> = { ep_title: newTitle };
+            // If your media_files table DOES have updated_at, keep this:
+            // updatePayload.updated_at = new Date().toISOString();
+
+            // Make sure you have access only to your own rows:
+            const { data, error, status } = await supabase
+                .from('media_files')
+                .update(updatePayload)
+                .eq('slug', editingEpisode.slug)
+                .eq('type', 'video')         // remove this line if your rows don’t set type='video'
+                .eq('user_id', user?.id)     // important for RLS & correctness
+                .select('slug, ep_title')    // force PostgREST to return the row (helps with no-match debugging)
+                .single();
+
+            if (error) {
+                console.error('[saveEditedTitle] Supabase error:', { status, error });
+                throw error;
+            }
+            if (!data) {
+                console.error('[saveEditedTitle] No row returned (likely no match). Filters used:', {
+                    slug: editingEpisode.slug,
+                    type: 'video',
+                    user_id: user?.id,
+                });
+                throw new Error('No matching row found. Check filters.');
+            }
+
+            // Update local state
+            setEpisodes(prev =>
+                prev.map(ep => (ep.slug === editingEpisode.slug ? { ...ep, title: newTitle } : ep))
+            );
+            setRecentVideos(prev =>
+                prev.map(v => (v.slug === editingEpisode.slug ? { ...v, name: newTitle } : v))
+            );
+
+            setEditModalOpen(false);
+            setEditingEpisode(null);
+        } catch (e: any) {
+            // Shows readable alert, with details in console
+            alert('Could not save title. See console for details.');
+        } finally {
+            setSavingTitle(false);
+        }
+    };
+
+
 
     useEffect(() => {
         // ✅ STEP 2: Fetch the latest podcast metadata on mount
@@ -93,7 +188,67 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         fetchMetadata();
     }, []);
 
+
     const handleSearch = async () => {
+        try {
+            const term = searchTerm.trim();
+            if (!term) {
+                setResults([]);
+                return;
+            }
+
+            setSearching(true);
+            const like = `%${term}%`;
+
+            const [creatorsRes, videosRes] = await Promise.all([
+                // Creators: display_name OR name OR description
+                supabase
+                    .from('podcast_metadata')
+                    .select('id, user_id, display_name, name, description, avatar_url')
+                    .or(`display_name.ilike.${like},name.ilike.${like},description.ilike.${like}`)
+                    .limit(20),
+
+                // Videos: title OR filename OR description (type = 'video')
+                supabase
+                    .from('media_files')
+                    .select('slug, ep_title, file_name, ep_description, public_url, type')
+                    .eq('type', 'video')
+                    .or(`ep_title.ilike.${like},file_name.ilike.${like},ep_description.ilike.${like}`)
+                    .limit(20),
+            ]);
+
+            if (creatorsRes.error) throw creatorsRes.error;
+            if (videosRes.error) throw videosRes.error;
+
+            const creators: SearchResult[] = (creatorsRes.data ?? []).map((c: any) => ({
+                type: 'creator',
+                id: c.id,
+                user_id: c.user_id,
+                display_name: c.display_name ?? c.name ?? null,
+                avatar_url: c.avatar_url ?? null,
+                description: c.description ?? null,
+            }));
+
+            const videos: SearchResult[] = (videosRes.data ?? []).map((v: any) => ({
+                type: 'video',
+                slug: v.slug,
+                title: v.ep_title || v.file_name || 'Untitled Video',
+                description: v.ep_description ?? null,
+                public_url: v.public_url ?? null,
+            }));
+
+            setResults([...creators, ...videos]); // ✅ single unified list
+        } catch (err) {
+            console.error('❌ Search error:', err);
+            setResults([]);
+        } finally {
+            setSearching(false);
+        }
+    };
+
+
+
+    /*const handleSearch = async () => {
         try {
             const term = searchTerm.trim();
             if (!term) return;
@@ -110,7 +265,8 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                 user_id,
                 tag,
                 created_at,
-                display_name
+                display_name,
+                title
             `);
 
             if (error) throw error;
@@ -127,7 +283,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         } catch (err) {
             console.error('❌ Search error:', err);
         }
-    };
+    };*/
 
     const loadImages = async () => {
         const avatarPath = localStorage.getItem('avatarPath');
@@ -159,7 +315,81 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
    /* // Define recentEpisodes
     const [recentEpisodes] = useState<Episode[]>([]);*/
 
-    const handleVideoUpload = async (file: File) => {
+
+    // REPLACE: handleVideoUpload to accept epTitle
+    const handleVideoUpload = async (file: File, epTitle: string) => {
+        try {
+            setUploading(true);
+
+            const userId = user?.id;
+            if (!userId) throw new Error("User not authenticated");
+
+            const safeName = sanitizeForStorage(file.name);
+            const path = `videos/${Date.now()}-${safeName}`;
+            const slug = `${Date.now()}-${file.name.replace(/\.[^/.]+$/, "")}`
+                .toLowerCase()
+                .replace(/\s+/g, "-")
+                .replace(/[^a-z0-9-_]/g, "");
+
+            // 1) Upload to storage
+            const { error: uploadError } = await supabase.storage
+                .from("video.bucket")
+                .upload(path, file, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            // 2) Get public URL
+            const { data: publicData } = supabase.storage
+                .from("video.bucket")
+                .getPublicUrl(path);
+
+            const url = publicData?.publicUrl;
+
+            // 3) Save to local state / storage
+            setVideoUrl(url);
+            localStorage.setItem("videoPath", path);
+
+            // 4) Insert metadata with ep_title
+            const { error: insertError } = await supabase
+                .from("media_files")
+                .insert([
+                    {
+                        user_id: userId,
+                        file_name: file.name,
+                        ep_title: epTitle,                      // 👈 store the title
+                        storage_path: path,
+                        public_url: url,
+                        file_size: file.size,
+                        uploaded_at: new Date().toISOString(),
+                        slug: slug,
+                        type: "video",
+                    },
+                ]);
+
+            if (insertError) throw insertError;
+
+            console.log("✅ Video uploaded and metadata saved");
+            await fetchRecentVideos(userId);
+            await fetchUserEpisodes(userId);
+        } catch (err) {
+            console.error("❌ Video upload failed:", err);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    // ADD: start the flow by asking for title first
+    const startVideoUploadFlow = (file: File) => {
+        if (!file) return;
+        setPendingFile(file);
+        // default title = filename (no extension)
+        setPendingTitle(file.name.replace(/\.[^/.]+$/, ""));
+        setShowTitleModal(true);
+    };
+
+
+
+    /*const handleVideoUpload = async (file: File) => {
         try {
             const userId = user?.id;
 
@@ -185,7 +415,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                 .from("video.bucket")
                 .getPublicUrl(path);
 
-            const url = publicData?.publicUrl;
+            const url = publicData?.publicUrl ?? null;
 
             // ✅ Save to local state and localStorage
             setVideoUrl(url);
@@ -198,6 +428,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                     {
                         user_id: userId,           // 👈 now it will match
                         file_name: file.name,
+                        ep_title: file.name.replace(/\.[^/.]+$/, ''),
                         storage_path: path,
                         public_url: url,
                         file_size: file.size,
@@ -217,7 +448,9 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         }
 
 
-    };
+    };*/
+
+
     //new code
     const handleAvatarUpload = async (file: File) => {
         try {
@@ -296,7 +529,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
     const fetchRecentVideos = async (userId: string) => {
         const { data, error } = await supabase
             .from("media_files")
-            .select("file_name, public_url, uploaded_at, slug, like_count")
+            .select("ep_title, ep_description, public_url, uploaded_at, slug, like_count")
             .eq("user_id", userId)
             .order("like_count", { ascending: false })
             .limit(10);
@@ -312,7 +545,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         }
 
         const recent = data.map((file) => ({
-            name: file.file_name,
+            name: file.ep_title,
             createdAt: file.uploaded_at,
             publicUrl: file.public_url,
             slug: file.slug,
@@ -331,7 +564,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
             // (Your logs showed `media_files.id` doesn't exist.)
             const { data, error } = await supabase
                 .from('media_files')
-                .select('file_name, public_url, uploaded_at, slug, type')
+                .select('file_name, ep_title, ep_description, public_url, uploaded_at, slug, type')
                 .eq('user_id', userId)
                 .eq('type', 'video')
                 .order('uploaded_at', { ascending: false });
@@ -345,8 +578,9 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
             const mapped: Episode[] = (data ?? []).map((row, idx) => ({
                 // fabricate a stable id using slug or filename+index
                 id: String(row.slug ?? `${row.file_name}-${idx}`),
-                title: row.file_name?.replace(/\.[^/.]+$/, '') || `Episode ${idx + 1}`,
-                description: 'Uploaded video',
+                slug: row.slug ?? String(row.file_name ?? `row-${idx}`),
+                title: row.ep_title?.replace(/\.[^/.]+$/, '') || `Episode ${idx + 1}`,
+                description: row.ep_description ||'Uploaded video',
                 publishDate: (row.uploaded_at ?? '').split('T')[0] || '',
                 duration: 'N/A',
                 status: 'published',
@@ -669,7 +903,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                 >
                                     <input
                                         type="text"
-                                        placeholder="Search podcasters"
+                                        placeholder="Search creators or videos"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         style={{
@@ -680,7 +914,52 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                         }}
                                     />
 
-                                    {searchResults.length > 0 && (
+                                    {results.length > 0 && (
+                                        <div className="search-dropdown">
+                                            {results.map((item) =>
+                                                item.type === 'creator' ? (
+                                                    <div
+                                                        key={`creator-${item.user_id}`}
+                                                        className="search-result-item"
+                                                        onClick={() => navigate(`/podcasters/${item.user_id}`)}
+                                                    >
+                                                        <img
+                                                            src={item.avatar_url || '/default-avatar.png'}
+                                                            alt="avatar"
+                                                            className="search-avatar"
+                                                        />
+                                                        <div>
+                                                            <div className="search-name">{item.display_name || 'Creator'}</div>
+                                                            {item.description && (
+                                                                <div className="search-description">
+                                                                    {item.description.slice(0, 60)}...
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div
+                                                        key={`video-${item.slug}`}
+                                                        className="search-result-item"
+                                                        onClick={() => navigate(`/videos/${item.slug}`)}
+                                                    >
+                                                        <div className="search-thumb" />
+                                                        <div>
+                                                            <div className="search-name">{item.title}</div>
+                                                            {item.description && (
+                                                                <div className="search-description">
+                                                                    {item.description.slice(0, 60)}...
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
+                                    )}
+
+
+                                    {/*{searchResults.length > 0 && (
                                         <div className="search-dropdown">
                                             {searchResults.map((result) => (
                                                 <div
@@ -705,10 +984,11 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                 </div>
                                             ))}
                                         </div>
-                                    )}
+                                    )}*/}
 
                                     <button
                                         type="submit"
+                                        disabled={searching}
                                         style={{
                                             padding: '0.5rem 1rem',
                                             backgroundColor: '#1A8C67',
@@ -717,8 +997,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                             borderRadius: '8px',
                                             cursor: 'pointer'
                                         }}
-                                    >
-                                        Search
+                                    >{searching ? 'Searching…' : 'Search'}
                                     </button>
                                 </form>
                             </div>
@@ -946,56 +1225,11 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                         currentImage={podcast_metadata?.logo_url}
                                         onImageUpload={handleLogoUpload}
                                         type="podcast"
-                                        size="md"
+                                        size="sm"
                                     />
                                 </div>
 
-                                {videoUrl && (
 
-                                    <div className={'vidPreHolder'}>
-                                        <h3>
-                                            Uploaded Video Preview
-                                        </h3>
-                                        <video className={'videoContent'} controls width="100%">
-                                            <source src={videoUrl} type="video/mp4" />
-                                            Your browser does not support the video tag.
-                                        </video>
-                                    </div>
-                                )}
-                            </div>
-                            <div className={'txtC'}>
-                                <h3>
-                                    Upload a Promo Video
-                                </h3>
-
-                                <div className={'videoDragDrop'}
-                                    onDrop={(e) => {
-                                        e.preventDefault();
-                                        const file = e.dataTransfer.files?.[0];
-                                        if (file) handleVideoUpload(file);
-                                    }}
-                                    onDragOver={(e) => e.preventDefault()}
-                                    style={{
-
-                                    }}
-                                    onClick={() => document.getElementById('videoInput')?.click()}
-                                    >
-
-                                    <p>
-                                        Drag and drop your video file here, or click to select
-                                    </p>
-
-                                    <input
-                                        id="videoInput"
-                                        type="file"
-                                        accept="video/*"
-                                        style={{ display: 'none' }}
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) handleVideoUpload(file);
-                                        }}
-                                    />
-                                </div>
                             </div>
 
                             {/*Unknown what's below*/}
@@ -1078,6 +1312,146 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
 
                         </div>
 
+                        <div className={'welcomeSec'}>
+                            <div className={'txtC'}>
+                                <h3>
+                                    Upload New Episode
+                                </h3>
+
+                                {videoUrl && (
+
+                                    <div className={'vidPreHolder'}>
+
+                                        <video className={'videoContent'} controls width="100%">
+                                            <source src={videoUrl} type="video/mp4" />
+                                            Your browser does not support the video tag.
+                                        </video>
+
+                                        <h3>
+                                            Uploaded Video Preview
+                                        </h3>
+                                    </div>
+                                )}
+
+                                <div className={'videoDragDrop'}
+                                     onChange={(e:React.ChangeEvent<HTMLInputElement>) => {
+                                         e.preventDefault();
+                                         const file = e.target.files?.[0];
+                                         if (file) startVideoUploadFlow(file);
+                                     }}
+                                     onDragOver={(e) => e.preventDefault()}
+                                     style={{
+
+                                     }}
+                                     onClick={() => document.getElementById('videoInput')?.click()}
+                                >
+
+                                    <p>
+                                        Drag and drop your video file here, or click to select
+                                    </p>
+
+                                    <input
+                                        id="videoInput"
+                                        type="file"
+                                        accept="video/*"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) startVideoUploadFlow(file);
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ADD: Title confirmation modal */}
+                        {showTitleModal && (
+                            <div
+                                className="modal fade show"
+                                role="dialog"
+                                style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}
+                                aria-modal="true"
+                            >
+                                <div className="modal-dialog">
+                                    <div className="modal-content">
+                                        <div className="modal-header">
+                                            <h5 className="modal-title">Name your episode</h5>
+                                            <button
+                                                type="button"
+                                                className="btn-close"
+                                                aria-label="Close"
+                                                onClick={() => {
+                                                    if (!uploading) {
+                                                        setShowTitleModal(false);
+                                                        setPendingFile(null);
+                                                        setPendingTitle('');
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+
+                                        <div className="modal-body">
+                                            <label className="form-label">Episode title</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={pendingTitle}
+                                                onChange={(e) => setPendingTitle(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && pendingFile && pendingTitle.trim()) {
+                                                        handleVideoUpload(pendingFile, pendingTitle.trim());
+                                                        setShowTitleModal(false);
+                                                        setPendingFile(null);
+                                                        setPendingTitle('');
+                                                    }
+                                                }}
+                                                autoFocus
+                                                placeholder="e.g., My First Episode"
+                                                disabled={uploading}
+                                            />
+                                            <small className="text-muted">
+                                                You can update this later from the Episodes tab.
+                                            </small>
+                                        </div>
+
+                                        <div className="modal-footer">
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-secondary"
+                                                onClick={() => {
+                                                    if (!uploading) {
+                                                        setShowTitleModal(false);
+                                                        setPendingFile(null);
+                                                        setPendingTitle('');
+                                                    }
+                                                }}
+                                                disabled={uploading}
+                                            >
+                                                Cancel
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                className="btn btn-success"
+                                                onClick={() => {
+                                                    if (pendingFile && pendingTitle.trim()) {
+                                                        handleVideoUpload(pendingFile, pendingTitle.trim());
+                                                        setShowTitleModal(false);
+                                                        setPendingFile(null);
+                                                        setPendingTitle('');
+                                                    }
+                                                }}
+                                                disabled={!pendingTitle.trim() || !pendingFile || uploading}
+                                            >
+                                                {uploading ? 'Uploading…' : 'Confirm & Upload'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+
                         {/* Stats Grid */}
                         <div className={'statContent'}>
                             <div className={'statHolder'}>
@@ -1133,19 +1507,17 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                 }}
                                                 onClick={() => handleLike(video.slug)}
                                             >
-                                                Like
                                             </button>
                                         </div>
                                         {/* Shareable Link */}
                                         {video.slug && (
-                                            <div style={{ marginTop: '0.5rem' }}>
+                                            <div className={'vidShare'}>
                                                 <a
                                                     href={`/videos/${video.slug}`}
-                                                    target="_blank"
+                                                    target="_self"
                                                     rel="noopener noreferrer"
-                                                    style={{ fontSize: '0.85rem', color: '#4285F4' }}
                                                 >
-                                                    🔗 Share this video
+                                                    <img className={'img-fluid'} src="/Drawable/share.png" alt="Share by Pexel Perfect"/> Share
                                                 </a>
                                             </div>
                                         )}
@@ -1179,7 +1551,17 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                 {!loadingEpisodes && episodes.map((episode: Episode) => (
                                     <div className={'aeSubItem0'} key={episode.id}>
                                         <div className={'aeSubItemContent'}>
-                                            <h3>{episode.title}</h3>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <h3 style={{ margin: 0 }}>{episode.title}</h3>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-outline-secondary"
+                                                    onClick={() => openEditTitle(episode)}
+                                                    title="Edit episode title"
+                                                >
+                                                    ✏️ Edit
+                                                </button>
+                                            </div>
                                             <p>{episode.description}</p>
 
                                             {/* Show video if present */}
@@ -1216,7 +1598,65 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                             </div>
                         </div>
                     </div>
+
                 )}
+                {editModalOpen && (
+                    <div
+                        className="modal fade show"
+                        role="dialog"
+                        style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}
+                        aria-modal="true"
+                    >
+                        <div className="modal-dialog">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title">Edit Episode Title</h5>
+                                    <button
+                                        type="button"
+                                        className="btn-close"
+                                        aria-label="Close"
+                                        onClick={() => !savingTitle && setEditModalOpen(false)}
+                                    />
+                                </div>
+
+                                <div className="modal-body">
+                                    <label className="form-label">Title</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={editingTitle}
+                                        onChange={(e) => setEditingTitle(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') saveEditedTitle();
+                                        }}
+                                        autoFocus
+                                        disabled={savingTitle}
+                                    />
+                                </div>
+
+                                <div className="modal-footer">
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary"
+                                        onClick={() => !savingTitle && setEditModalOpen(false)}
+                                        disabled={savingTitle}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-success"
+                                        onClick={saveEditedTitle}
+                                        disabled={savingTitle || !editingTitle.trim()}
+                                    >
+                                        {savingTitle ? 'Saving…' : 'Save Title'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
             </main>
 
             <style>{`

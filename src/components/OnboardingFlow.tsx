@@ -117,6 +117,7 @@ const OnboardingFlow: React.FC = () => {
 
                 logoUrl = publicData?.publicUrl ?? null;
                 logoPublicId = path;
+                localStorage.setItem("logoPath", path);
             }
             if (formData.avatar) {
                 const avatarName = sanitizeForStorage(formData.avatar.name);
@@ -134,6 +135,7 @@ const OnboardingFlow: React.FC = () => {
 
                 avatarUrl = avatarPublicData?.publicUrl ?? null;
                 avatarPublicId = avatarPath;
+                localStorage.setItem("avatarPath", avatarPath);
             }
 
             const { error: insertError } = await supabase.from('podcast_metadata').upsert([

@@ -1,6 +1,5 @@
 
-/*import React from "react";
-import { useAuth0 } from "@auth0/auth0-react";*/
+
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient.ts";
@@ -26,6 +25,8 @@ function Home() {
     const [authPassword, setAuthPassword] = useState('');
     const [authLoading, setAuthLoading] = useState(false);
     const [authError, setAuthError] = useState<string | null>(null);
+    type AuthProvider = 'google' ; // add others if needed
+    const oauthProviders: AuthProvider[] = ['google'];
 
     const openAuth = (mode: 'login' | 'signup') => {
         setAuthError(null);
@@ -69,13 +70,12 @@ function Home() {
     };
 
 
-// Keep Google as secondary option
-    const signInWithGoogle = async () => {
+// generic oAuth handler
+    const signInWithOAuth = async (provider: AuthProvider) => {
         await supabase.auth.signInWithOAuth({
-            provider: 'google',
+            provider,
             options: {
                 redirectTo: `${window.location.origin}/dashboard`,
-                // remove 'prompt: login' so Google isn't forced every time
             },
         });
     };
@@ -89,8 +89,8 @@ function Home() {
             setUser(sessionUser);
             setLoading(false);
 /*
-            if (sessionUser) {
-                navigate("/dashboard");
+
+
             }*/
         };
         getSession();
@@ -168,45 +168,6 @@ function Home() {
 
                         <div className="d-flex">
 
-                            {/*{!user ? (
-                                <>
-                                    <button
-                                        id="loginButton"
-                                        className="btn btn-outline-success m-1"
-                                        onClick={async () => {
-                                            await supabase.auth.signInWithOAuth({
-                                                provider: 'google',
-                                                options: {
-                                                    redirectTo: 'http://localhost:4173/dashboard',
-                                                    queryParams: {
-                                                        prompt: 'login'  // 👈 force the login dialog every time
-                                                    }
-                                                },
-                                            });
-                                        }}
-                                    >
-                                        Login
-                                    </button>
-
-                                    <button
-                                        id="signUpButton"
-                                        className="btn btn-outline-success m-1"
-                                        onClick={async () => {
-                                            await supabase.auth.signInWithOAuth({
-                                                provider: 'google',
-                                                options: {
-                                                    redirectTo: `${window.location.origin}/onboarding`,
-                                                    queryParams: {
-                                                        prompt: 'login' // ✅ This forces user selection each time
-                                                    }
-                                                },
-                                            });
-                                        }}
-                                    >
-                                        Sign Up
-                                    </button>
-                                </>
-                            ) : (*/}
                             {!user ? (
                                 <>
                                     <button
@@ -239,23 +200,6 @@ function Home() {
                                 </>
                             )}
 
-                            {/*<button
-                                id="loginButton"
-                                className="btn btn-outline-success m-1"
-                                onClick={() => loginWithRedirect()}
-                            >
-                                Login
-                            </button>
-                            <button
-                                id="signUpButton"
-                                className="btn btn-outline-success m-1"
-                                onClick={() => loginWithRedirect({
-                                    authorizationParams: { screen_hint: "signup" },
-                                    appState: { returnTo: "/onboarding" }
-                                })}
-                            >
-                                Sign Up
-                            </button>*/}
                         </div>
                     </div>
                 </div>
@@ -286,19 +230,6 @@ function Home() {
                     <>
                         <h2 className="mb-3">Start Growing Your Podcast Today</h2>
                         <p className="mb-4">Join PodPilot and simplify how you publish and manage your episodes.</p>
-                        {/*<button
-                            className="btn btn-success btn-lg px-4"
-                            onClick={async () => {
-                                await supabase.auth.signInWithOAuth({
-                                    provider: 'google',
-                                    options: {
-                                        redirectTo: window.location.origin + '/onboarding',
-                                    },
-                                });
-                            }}
-                        >
-                            Get Started Free
-                        </button>*/}
                         <button
                             className="btn btn-success btn-lg px-4"
                             onClick={() => openAuth('signup')}
@@ -437,24 +368,18 @@ function Home() {
                                     {authLoading ? 'Please wait…' : (authOpen === 'signup' ? 'Create account' : 'Log in')}
                                 </button>
 
-                                {/* OPTIONAL Magic link alternative */}
-                                {/* <button
-            className="btn btn-outline-secondary w-100 mb-3"
-            onClick={handleMagicLink}
-            disabled={authLoading || !authEmail}
-          >
-            Send me a magic link
-          </button> */}
-
                                 <div className="text-center text-muted my-2">or</div>
 
-                                <button
-                                    className="btn btn-outline-dark w-100"
-                                    onClick={signInWithGoogle}
-                                    disabled={authLoading}
-                                >
-                                    Continue with Google
-                                </button>
+                                {oauthProviders.map((provider) => (
+                                    <button
+                                        key={provider}
+                                        className={`btn btn-outline-dark w-100 mb-2`}
+                                        onClick={() => signInWithOAuth(provider)}
+                                        disabled={authLoading}
+                                    >
+                                        Continue with {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>

@@ -413,81 +413,96 @@ const PodcasterProfile: React.FC = () => {
                                     <div style={{ marginTop: '1rem' }}>
                                         <h4>Comments</h4>
 
-                                        <div style={{ marginBottom: '0.5rem' }}>
-                                            {(comments[video.slug] ?? []).map((c) => (
-                                                <div key={c.id} style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}>
-                                                    {/* HEADER: avatar + author on the left, ellipsis on the right */}
-                                                    <div
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'space-between',
-                                                            gap: '0.5rem',
-                                                        }}
-                                                    >
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                            {c.podcast_metadata?.avatar_url && (
-                                                                <img
-                                                                    src={c.podcast_metadata.avatar_url}
-                                                                    alt="avatar"
-                                                                    style={{ width: 28, height: 28, borderRadius: '50%' }}
-                                                                />
+                                        {(() => {
+                                            const list = comments[video.slug] ?? [];
+                                            const needsScroll = list.length > 3;
+
+                                            return (
+                                                <div
+                                                    style={{
+                                                        marginBottom: '0.5rem',
+                                                        maxHeight: needsScroll ? 280 : 'none', // ~3 comments tall
+                                                        overflowY: needsScroll ? 'auto' : 'visible',
+                                                        paddingRight: needsScroll ? 4 : 0,
+                                                    }}
+                                                >
+                                                    {list.map((c) => (
+                                                        <div key={c.id} style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+                                                            {/* HEADER: avatar + author on the left, ellipsis on the right */}
+                                                            <div
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'space-between',
+                                                                    gap: '0.5rem',
+                                                                }}
+                                                            >
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                    {c.podcast_metadata?.avatar_url && (
+                                                                        <img
+                                                                            src={c.podcast_metadata.avatar_url}
+                                                                            alt="avatar"
+                                                                            style={{ width: 28, height: 28, borderRadius: '50%' }}
+                                                                        />
+                                                                    )}
+                                                                    <strong>{c.podcast_metadata?.name || 'User'}:</strong>
+                                                                </div>
+
+                                                                {/* owner-only actions (ellipsis menu) */}
+                                                                {viewer?.id === c.user_id && editingCommentId !== c.id && (
+                                                                    <CommentActions
+                                                                        visible
+                                                                        onEdit={() => beginEdit(c.id, c.content)}
+                                                                        onDelete={() => deleteComment(video.slug, c.id)}
+                                                                        menuKey={`profile-${c.id}`}
+                                                                        deleting={deletingId === c.id}
+                                                                    />
+                                                                )}
+                                                            </div>
+
+                                                            {/* BODY */}
+                                                            {editingCommentId === c.id ? (
+                                                                <>
+                <textarea
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    rows={2}
+                    style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        borderRadius: 6,
+                        border: '1px solid #ccc',
+                        marginTop: 8,
+                    }}
+                />
+                                                                    <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                                                                        <button
+                                                                            className="btn btn-success btn-sm"
+                                                                            disabled={savingEdit || !editingText.trim()}
+                                                                            onClick={() => saveEdit(video.slug, c.id)}
+                                                                        >
+                                                                            {savingEdit ? 'Saving…' : 'Save'}
+                                                                        </button>
+                                                                        <button className="btn btn-outline-secondary btn-sm" onClick={cancelEdit}>
+                                                                            Cancel
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <div style={{ marginTop: '0.25rem' }}>{c.content}</div>
+                                                                    <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                                                                        {new Date(c.created_at).toLocaleString()}
+                                                                    </div>
+                                                                </>
                                                             )}
-                                                            <strong>{c.podcast_metadata?.name || 'User'}:</strong>
                                                         </div>
-
-                                                        {/* owner-only actions */}
-                                                        {viewer?.id === c.user_id && editingCommentId !== c.id && (
-                                                            <CommentActions
-                                                                visible={true}
-                                                                onEdit={() => beginEdit(c.id, c.content)}
-                                                                onDelete={() => deleteComment(video.slug, c.id)}
-                                                                menuKey={`profile-${c.id}`}
-                                                                deleting={deletingId === c.id}
-                                                            />
-                                                        )}
-                                                    </div>
-
-                                                    {/* BODY */}
-                                                    {editingCommentId === c.id ? (
-                                                        <>
-            <textarea
-                value={editingText}
-                onChange={(e) => setEditingText(e.target.value)}
-                rows={2}
-                style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    borderRadius: 6,
-                    border: '1px solid #ccc',
-                    marginTop: 8,
-                }}
-            />
-                                                            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                                                                <button
-                                                                    className="btn btn-success btn-sm"
-                                                                    disabled={savingEdit || !editingText.trim()}
-                                                                    onClick={() => saveEdit(video.slug, c.id)}
-                                                                >
-                                                                    {savingEdit ? 'Saving…' : 'Save'}
-                                                                </button>
-                                                                <button className="btn btn-outline-secondary btn-sm" onClick={cancelEdit}>
-                                                                    Cancel
-                                                                </button>
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <div style={{ marginTop: '0.25rem' }}>{c.content}</div>
-                                                            <div style={{ fontSize: '0.75rem', color: '#888' }}>
-                                                                {new Date(c.created_at).toLocaleString()}
-                                                            </div>
-                                                        </>
-                                                    )}
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
+                                            );
+                                        })()}
 
+                                        {/* Add new comment */}
                                         <textarea
                                             placeholder="Add a comment..."
                                             value={newComment[video.slug] || ''}

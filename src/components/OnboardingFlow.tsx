@@ -426,41 +426,6 @@ const OnboardingFlow: React.FC = () => {
 
 
 
-    /*const renderStep6 = () => (
-        <div className="onboarding-card">
-            <h2>Review</h2>
-            <p>Please review your information. If you must correct a field, please click <strong>previous</strong> to go back.</p>
-
-            <div className="social-connections">
-                {["youtubeConnected", "instagramConnected"].map((platform) => {
-                    const label = platform === 'youtubeConnected' ? 'YouTube' : 'Instagram';
-                    const connected = formData[platform as keyof FormData] as boolean;
-                    return (
-                        <div key={platform} className="connection-item">
-                            <span>{label}</span>
-                            <button
-                                className={`connection-btn ${connected ? 'connected' : ''}`}
-                                onClick={() => updateFormData(platform as keyof FormData, !connected)}
-                            >
-                                {connected ? '✓ Connected' : 'Connect'}
-                            </button>
-                        </div>
-                    );
-                })}
-            </div>
-
-            <div className="launch-box">
-                <div className="rocket-icon">🚀</div>
-                <h3>You're ready for takeoff!</h3>
-                <p>Everything’s set up. Launch your dashboard to get started.</p>
-            </div>
-
-            <div className="navigation-buttons">
-                <button onClick={prevStep} className="nav-btn secondary">Previous</button>
-                <button onClick={handleSubmit} className="nav-btn primary">Launch Dashboard 🚀</button>
-            </div>
-        </div>
-    );*/
 
     const renderCurrentStep = () => {
         switch (currentStep) {

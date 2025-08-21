@@ -419,11 +419,12 @@ const PodcasterProfile: React.FC = () => {
 
                                             return (
                                                 <div
+                                                    className={`comments-list ${needsScroll ? 'scrollable' : ''}`}
                                                     style={{
                                                         marginBottom: '0.5rem',
-                                                        maxHeight: needsScroll ? 280 : 'none', // ~3 comments tall
+                                                        maxHeight: needsScroll ? 280 : 'none',
                                                         overflowY: needsScroll ? 'auto' : 'visible',
-                                                        paddingRight: needsScroll ? 4 : 0,
+                                                        paddingRight: needsScroll ? 16 : 0, // <-- extra space so scrollbar doesn't cover the ⋮
                                                     }}
                                                 >
                                                     {list.map((c) => (
@@ -448,7 +449,7 @@ const PodcasterProfile: React.FC = () => {
                                                                     <strong>{c.podcast_metadata?.name || 'User'}:</strong>
                                                                 </div>
 
-                                                                {/* owner-only actions (ellipsis menu) */}
+                                                                {/* owner-only actions */}
                                                                 {viewer?.id === c.user_id && editingCommentId !== c.id && (
                                                                     <CommentActions
                                                                         visible
@@ -502,7 +503,6 @@ const PodcasterProfile: React.FC = () => {
                                             );
                                         })()}
 
-                                        {/* Add new comment */}
                                         <textarea
                                             placeholder="Add a comment..."
                                             value={newComment[video.slug] || ''}

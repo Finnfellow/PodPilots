@@ -224,16 +224,16 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                 // Creators: display_name OR name OR description
                 supabase
                     .from('podcast_metadata')
-                    .select('id, user_id, display_name, name, description, avatar_url')
-                    .or(`display_name.ilike.${like},name.ilike.${like},description.ilike.${like}`)
+                    .select('id, user_id, display_name, name, avatar_url')
+                    .or(`display_name.ilike.${like},name.ilike.${like}`)
                     .limit(20),
 
                 // Videos: title OR filename OR description (type = 'video')
                 supabase
                     .from('media_files')
-                    .select('slug, ep_title, file_name, ep_description, public_url, type')
+                    .select('slug, ep_title, file_name, public_url, type')
                     .eq('type', 'video')
-                    .or(`ep_title.ilike.${like},file_name.ilike.${like},ep_description.ilike.${like}`)
+                    .or(`ep_title.ilike.${like},file_name.ilike.${like}`)
                     .limit(20),
             ]);
 
@@ -980,7 +980,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
     console.log("✅ Recent videos loaded:", recentVideos);
 
     return (
-        <div className={"mainReturn"}>
+        <div className={"mainReturn post_bannerLM"}>
             {/* Welcome Toast */}
             {showWelcome && (
                 <div
@@ -1001,7 +1001,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                         alignItems: 'center',
                         gap: '0.75rem',
                     }}
-                >
+                    >
                     <span style={{ fontSize: '1.25rem' }}>🎉</span>
                     <div>
                         <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
@@ -1027,11 +1027,10 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                     </button>
                 </div>
             )}
-
             {/* Header */}
             <header className={'dashboard_header'}>
                 <nav
-                    className={`navbar navbar-expand-xl sticky-top transition-navbar ${
+                    className={`navbar navbar-expand-xl sticky-top lightMode transition-navbar ${
                         showNavbar ? 'visible' : 'hidden'
                     }`}
                 >
@@ -1040,6 +1039,14 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                             <img
                                 className="img-fluid"
                                 src="/Drawable/PodPilot-Logo-web.png"
+                                alt="PodPilot Logo"
+                            />
+                        </Link>
+
+                        <Link className="navbar-brand logoDM" to="/dashboard?tab=Home">
+                            <img
+                                className="img-fluid"
+                                src="/Drawable/PodPilot-Logo-web_light.png"
                                 alt="PodPilot Logo"
                             />
                         </Link>
@@ -1139,16 +1146,9 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                     )}
 
                                     <button
+                                        className="searchBtn"
                                         type="submit"
                                         disabled={searching}
-                                        style={{
-                                            padding: '0.5rem 1rem',
-                                            backgroundColor: '#1A8C67',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            cursor: 'pointer',
-                                        }}
                                     >
                                         {searching ? 'Searching…' : 'Search'}
                                     </button>
@@ -1168,753 +1168,843 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                 </nav>
             </header>
 
-            {/* Main Content */}
-            <main className={'mainSec'}>
-                {activeTab === 'Home' && (
-                    <div>
-                        {/* Welcome, Section */}
-                        <div className={'welcomeSec'}>
-                            <div className={'welcomeBackContent'}>
-                                <div className={'contentHolder'}>
-                                    <h2>
-                                        Welcome back, {podcast_metadata?.name || 'Creator'}! 👋
-                                    </h2>
-                                    <p>
-                                        {podcast_metadata?.description ||
-                                            'Upload episodes, and let listeners discover your content.'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Profile and Podcast Images */}
-                            <div className={'profileUploadSec'}>
-                                <div className={'txtC'}>
-                                    <h3>Your Profile</h3>
-                                    <ImageUpload
-                                        currentImage={podcast_metadata?.avatar_url}
-                                        onImageUpload={handleAvatarUpload}
-                                        type="avatar"
-                                        size="sm"
-                                    />
-                                </div>
-
-                                <div className={'txtC'}>
-                                    <h3>Podcast Logo</h3>
-                                    <ImageUpload
-                                        currentImage={podcast_metadata?.logo_url}
-                                        onImageUpload={handleLogoUpload}
-                                        type="podcast"
-                                        size="sm"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Unknown what's below */}
-                            {isEditingMetadata ? (
-                                <div className={'editMetaContent'}>
-                                    <input
-                                        type="text"
-                                        placeholder="Podcast Name"
-                                        value={editForm.name}
-                                        onChange={(e) => updateMetadata('name', e.target.value)}
-                                    />
-
-                                    <textarea
-                                        placeholder="Podcast Description"
-                                        value={editForm.description}
-                                        onChange={(e) => updateMetadata('description', e.target.value)}
-                                        rows={3}
-                                    />
-
-                                    <div className={'inputButtonHolder'}>
-                                        <input
-                                            type="text"
-                                            placeholder="Add tag"
-                                            value={tagInput}
-                                            onChange={(e) => setTagInput(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault();
-                                                    addTag();
-                                                }
-                                            }}
-                                        />
-                                        <button onClick={addTag}>Add</button>
-                                    </div>
-
-                                    {editForm.tags.length > 0 && (
-                                        <div className={'editFormContent'}>
-                                            {editForm.tags.map((tag, index) => (
-                                                <span key={index}>
-                        {tag}
-                                                    <button onClick={() => removeTag(tag)}>×</button>
-                      </span>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    <div className={'saveMetaContent'}>
-                                        <button className={'saveBtn'} onClick={saveMetadata}>
-                                            Save Changes
-                                        </button>
-                                        <button className={'cancelBtn'} onClick={cancelEdit}>
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <>
-                                    {podcast_metadata?.tag && podcast_metadata.tag.length > 0 && (
-                                        <div className={'podCastMetaContent'}>
-                                            <span className={'podSpan0'}>Tags:</span>
-                                            {podcast_metadata.tag.map((tag, index) => (
-                                                <span className={'podSpan1'} key={index}>
-                        {tag}
-                      </span>
-                                            ))}
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-
-                        <div className={'welcomeSec'}>
-                            <div className={'txtC'}>
-                                <h3>Upload New Episode</h3>
-
-                                {videoUrl && (
-                                    <div className={'vidPreHolder'}>
-                                        <video className={'videoContent'} controls width="100%">
-                                            <source src={videoUrl} type="video/mp4" />
-                                            Your browser does not support the video tag.
-                                        </video>
-
-                                        <h3>Uploaded Video Preview</h3>
-                                    </div>
-                                )}
-
-                                <div
-                                    className={'videoDragDrop'}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                        e.preventDefault();
-                                        const file = e.target.files?.[0];
-                                        if (file) startVideoUploadFlow(file);
-                                    }}
-                                    onDragOver={(e) => e.preventDefault()}
-                                    onClick={() =>
-                                        document.getElementById('videoInput')?.click()
-                                    }
-                                >
-                                    <p>Drag and drop your video file here, or click to select</p>
-
-                                    <input
-                                        id="videoInput"
-                                        type="file"
-                                        accept="video/*"
-                                        style={{ display: 'none' }}
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) startVideoUploadFlow(file);
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ADD: Title confirmation modal */}
-                        {showTitleModal && (
-                            <div
-                                className="modal fade show"
-                                role="dialog"
-                                style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}
-                                aria-modal="true"
-                            >
-                                <div className="modal-dialog">
-                                    <div className="modal-content">
-                                        <div className="modal-header">
-                                            <h5 className="modal-title">Name your episode</h5>
-                                            <button
-                                                type="button"
-                                                className="btn-close"
-                                                aria-label="Close"
-                                                onClick={() => {
-                                                    if (!uploading) {
-                                                        setShowTitleModal(false);
-                                                        setPendingFile(null);
-                                                        setPendingTitle('');
-                                                    }
-                                                }}
-                                            />
-                                        </div>
-
-                                        <div className="modal-body">
-                                            <label className="form-label">Episode title</label>
-                                            <input
-                                                type="text"
-                                                className="form-control"
-                                                value={pendingTitle}
-                                                onChange={(e) => setPendingTitle(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (
-                                                        e.key === 'Enter' &&
-                                                        pendingFile &&
-                                                        pendingTitle.trim()
-                                                    ) {
-                                                        handleVideoUpload(
-                                                            pendingFile,
-                                                            pendingTitle.trim()
-                                                        );
-                                                        setShowTitleModal(false);
-                                                        setPendingFile(null);
-                                                        setPendingTitle('');
-                                                    }
-                                                }}
-                                                autoFocus
-                                                placeholder="e.g., My First Episode"
-                                                disabled={uploading}
-                                            />
-                                            <small className="text-muted">
-                                                You can update this later from the Episodes tab.
-                                            </small>
-                                        </div>
-
-                                        <div className="modal-footer">
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-secondary"
-                                                onClick={() => {
-                                                    if (!uploading) {
-                                                        setShowTitleModal(false);
-                                                        setPendingFile(null);
-                                                        setPendingTitle('');
-                                                    }
-                                                }}
-                                                disabled={uploading}
-                                            >
-                                                Cancel
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                className="btn btn-success"
-                                                onClick={() => {
-                                                    if (pendingFile && pendingTitle.trim()) {
-                                                        handleVideoUpload(
-                                                            pendingFile,
-                                                            pendingTitle.trim()
-                                                        );
-                                                        setShowTitleModal(false);
-                                                        setPendingFile(null);
-                                                        setPendingTitle('');
-                                                    }
-                                                }}
-                                                disabled={
-                                                    !pendingTitle.trim() || !pendingFile || uploading
-                                                }
-                                            >
-                                                {uploading ? 'Uploading…' : 'Confirm & Upload'}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Stats Grid */}
-                        <div className={'statContent'}>
-                            <div className={'statHolder'}>
-                                <h3>Total Episodes</h3>
-                                <p>{stats.totalEpisodes}</p>
-                            </div>
-                        </div>
-
-                        {/* Recent Episodes */}
-                        <div className={'recentEpisodeContent'}>
-                            <h2>Your Episodes</h2>
-                            <p>
-                                <em>
-                                    Episodes with the most likes will automatically show towards the
-                                    top of this list!
-                                </em>
-                            </p>
-
-                            <div
-                                className={'episodeContent'}
-                                style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
-                            >
-                                {recentVideos.map((video) => (
-                                    <div className={'recentVid'} key={video.slug}>
-                                        <video width="100%" height="auto" controls src={video.publicUrl} />
-                                        <span className={'vidSpan0'}>{video.name}</span>
-                                        <span className={'vidSpan1'}>
-                    Uploaded on {new Date(video.createdAt).toLocaleDateString()}
-                  </span>
-
-                                        {/* Like Button */}
-                                        <div
-                                            style={{
-                                                marginTop: '0.5rem',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.5rem',
-                                            }}
-                                        >
-                                            <span>❤️ {video.likeCount ?? 0} Likes</span>
-                                            <button
-                                                style={{
-                                                    background: 'rgba(240,79,79,0)',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    borderRadius: '4px',
-                                                    padding: '0.25rem 0.5rem',
-                                                    cursor: 'pointer',
-                                                }}
-                                                onClick={() => handleLike(video.slug)}
-                                            />
-                                        </div>
-
-                                        {/* Comments Section */}
-                                        <div className={'video-comments'} style={{ marginTop: '1rem' }}>
-                                            <h4>Comments</h4>
-
-                                            {(() => {
-                                                const list = comments[video.slug] ?? [];
-                                                const needsScroll = list.length > 3;
-
-                                                return (
-                                                    <div
-                                                        className={`comments-list ${needsScroll ? 'scrollable' : ''}`}
-                                                        style={{
-                                                            marginBottom: '0.5rem',
-                                                            maxHeight: needsScroll ? 280 : 'none',
-                                                            overflowY: needsScroll ? 'auto' : 'visible',
-                                                        }}
-                                                    >
-                                                        {list.map((comment) => (
-                                                            <div
-                                                                key={comment.id}
-                                                                style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}
-                                                            >
-                                                                {/* HEADER with avatar/name left, ⋮ right */}
-                                                                <div
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'space-between',
-                                                                        gap: '0.5rem',
-                                                                    }}
-                                                                >
-                                                                    <div
-                                                                        style={{
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            gap: '0.5rem',
-                                                                        }}
-                                                                    >
-                                                                        {comment.podcast_metadata?.avatar_url && (
-                                                                            <img
-                                                                                src={comment.podcast_metadata.avatar_url}
-                                                                                alt="avatar"
-                                                                                style={{
-                                                                                    width: 28,
-                                                                                    height: 28,
-                                                                                    borderRadius: '50%',
-                                                                                }}
-                                                                            />
-                                                                        )}
-                                                                        <strong>
-                                                                            {comment.podcast_metadata?.name || 'User'}:
-                                                                        </strong>
-                                                                    </div>
-
-                                                                    <CommentActions
-                                                                        visible={
-                                                                            user?.id === comment.user_id &&
-                                                                            editingCommentId !== comment.id
-                                                                        }
-                                                                        onEdit={() => beginEdit(comment.id, comment.content)}
-                                                                        onDelete={() => deleteComment(video.slug, comment.id)}
-                                                                        menuKey={`home-${comment.id}`}
-                                                                    />
-                                                                </div>
-
-                                                                {/* BODY */}
-                                                                {editingCommentId === comment.id ? (
-                                                                    <>
-                <textarea
-                    value={editingText}
-                    onChange={(e) => setEditingText(e.target.value)}
-                    rows={2}
-                    style={{
-                        width: '100%',
-                        padding: '0.5rem',
-                        borderRadius: 6,
-                        border: '1px solid #ccc',
-                        marginTop: 8,
-                    }}
-                />
-                                                                        <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                                                                            <button
-                                                                                className="btn btn-success btn-sm"
-                                                                                disabled={savingEdit || !editingText.trim()}
-                                                                                onClick={() => saveEdit(video.slug, comment.id)}
-                                                                            >
-                                                                                {savingEdit ? 'Saving…' : 'Save'}
-                                                                            </button>
-                                                                            <button
-                                                                                className="btn btn-outline-secondary btn-sm"
-                                                                                onClick={cancelEdit}
-                                                                            >
-                                                                                Cancel
-                                                                            </button>
-                                                                        </div>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <div style={{ marginTop: '0.25rem' }}>
-                                                                            {comment.content}
-                                                                        </div>
-                                                                        <div style={{ fontSize: '0.75rem', color: '#888' }}>
-                                                                            {new Date(comment.created_at).toLocaleString()}
-                                                                        </div>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                );
-                                            })()}
-
-                                            <textarea
-                                                placeholder="Add a comment..."
-                                                value={newComment[video.slug] || ''}
-                                                onChange={(e) =>
-                                                    setNewComment((prev) => ({
-                                                        ...prev,
-                                                        [video.slug]: e.target.value,
-                                                    }))
-                                                }
-                                                rows={2}
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '0.5rem',
-                                                    borderRadius: '6px',
-                                                    border: '1px solid #ccc',
-                                                    marginBottom: '0.25rem',
-                                                }}
-                                            />
-                                            <button
-                                                onClick={() => handleCommentSubmit(video.slug)}
-                                                style={{
-                                                    padding: '0.5rem 1rem',
-                                                    backgroundColor: '#1A8C67',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    borderRadius: '6px',
-                                                    cursor: 'pointer',
-                                                }}
-                                            >
-                                                Post Comment
-                                            </button>
-                                        </div>
-
-                                        {/* Shareable Link */}
-                                        {video.slug && (
-                                            <div className={'vidShare'}>
-                                                <a
-                                                    href={`/videos/${video.slug}`}
-                                                    target="_self"
-                                                    rel="noopener noreferrer"
-                                                >
-                                                    <img
-                                                        className={'img-fluid'}
-                                                        src="/Drawable/share.png"
-                                                        alt="Share by Pexel Perfect"
-                                                    />{' '}
-                                                    Share
-                                                </a>
+            <div className="container">
+                <div className="row">
+                    <div className="col-6">
+                        {/* Main Content */}
+                        <main className={'mainSec'}>
+                            {activeTab === 'Home' && (
+                                <div>
+                                    {/* Welcome, Section */}
+                                    <div className={'welcomeSec'}>
+                                        <div className={'welcomeBackContent'}>
+                                            <div className={'contentHolder'}>
+                                                <h2>
+                                                    Welcome back, {podcast_metadata?.name || 'Creator'}! 👋
+                                                </h2>
+                                                <p>
+                                                    {podcast_metadata?.description ||
+                                                        'Upload episodes, and let listeners discover your content.'}
+                                                </p>
                                             </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
+                                        </div>
 
-                {activeTab === 'episodes' && (
-                    <div className={'actEpisodeContent'}>
-                        <div className={'actEpisodeItem0'}>
-                            <h2>Your Collection of Episodes</h2>
-                        </div>
+                                        {/* Profile and Podcast Images */}
+                                        <div className={'profileUploadSec'}>
+                                            <div className={'txtC'}>
+                                                <ImageUpload
+                                                    currentImage={podcast_metadata?.avatar_url}
+                                                    onImageUpload={handleAvatarUpload}
+                                                    type="avatar"
+                                                    size="sm"
+                                                />
+                                            </div>
 
-                        <div className={'actEpisodeItem1'}>
-                            <div className={'actEpiSubItem0'}>
-                                {loadingEpisodes && (
-                                    <div className={'aeSubItem0'}>Loading your episodes…</div>
-                                )}
-                                {!loadingEpisodes && episodes.length === 0 && (
-                                    <div className={'aeSubItem0'}>No episodes yet. Try uploading a video!</div>
-                                )}
+                                            <div className={'txtC'}>
+                                                <ImageUpload
+                                                    currentImage={podcast_metadata?.logo_url}
+                                                    onImageUpload={handleLogoUpload}
+                                                    type="podcast"
+                                                    size="sm"
+                                                />
+                                            </div>
+                                        </div>
 
-                                {!loadingEpisodes &&
-                                    episodes.map((episode: Episode) => (
-                                        <div className={'aeSubItem0'} key={episode.id}>
-                                            <div className={'aeSubItemContent'}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                    <h3 style={{ margin: 0 }}>{episode.title}</h3>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-sm btn-outline-secondary"
-                                                        onClick={() => openEditTitle(episode)}
-                                                        title="Edit episode title"
-                                                    >
-                                                        ✏️ Edit
-                                                    </button>
+                                        {/* Unknown what's below */}
+                                        {isEditingMetadata ? (
+                                            <div className={'editMetaContent'}>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Podcast Name"
+                                                    value={editForm.name}
+                                                    onChange={(e) => updateMetadata('name', e.target.value)}
+                                                />
+
+                                                <textarea
+                                                    placeholder="Podcast Description"
+                                                    value={editForm.description}
+                                                    onChange={(e) => updateMetadata('description', e.target.value)}
+                                                    rows={3}
+                                                />
+
+                                                <div className={'inputButtonHolder'}>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Add tag"
+                                                        value={tagInput}
+                                                        onChange={(e) => setTagInput(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                e.preventDefault();
+                                                                addTag();
+                                                            }
+                                                        }}
+                                                    />
+                                                    <button onClick={addTag}>Add</button>
                                                 </div>
-                                                <p>{episode.description}</p>
 
-                                                {/* Show video if present */}
-                                                {episode.videoUrl && (
-                                                    <div className={'aeSubItem1'}>
-                                                        <video
-                                                            controls
-                                                            width="100%"
-                                                            style={{ maxWidth: 600, borderRadius: 8 }}
-                                                        >
-                                                            <source src={episode.videoUrl} type="video/mp4" />
-                                                            Your browser does not support the video tag.
-                                                        </video>
+                                                {editForm.tags.length > 0 && (
+                                                    <div className={'editFormContent'}>
+                                                        {editForm.tags.map((tag, index) => (
+                                                            <span key={index}>
+                                                    {tag}
+                                                                <button onClick={() => removeTag(tag)}>×</button>
+                                                </span>
+                                                        ))}
                                                     </div>
                                                 )}
 
-                                                <div className={'aeSubItem2'}>
-                        <span>
-                          {episode.publishDate
-                              ? `Published: ${episode.publishDate}`
-                              : 'Unpublished'}
-                        </span>
-                                                </div>
-
-                                                {/* Likes */}
-                                                <div
-                                                    style={{
-                                                        marginTop: '0.5rem',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '0.5rem',
-                                                    }}
-                                                >
-                                                    <span>❤️ {episode.likeCount ?? 0} Likes</span>
-                                                    <button
-                                                        style={{
-                                                            background: 'rgba(240,79,79,0)',
-                                                            color: 'white',
-                                                            border: 'none',
-                                                            borderRadius: '4px',
-                                                            padding: '0.25rem 0.5rem',
-                                                            cursor: 'pointer',
-                                                        }}
-                                                        onClick={() => handleLike(episode.slug)}
-                                                    >
-                                                        Like
+                                                <div className={'saveMetaContent'}>
+                                                    <button className={'saveBtn'} onClick={saveMetadata}>
+                                                        Save Changes
+                                                    </button>
+                                                    <button className={'cancelBtn'} onClick={cancelEdit}>
+                                                        Cancel
                                                     </button>
                                                 </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {/*{podcast_metadata?.tag && podcast_metadata.tag.length > 0 && (
+                                                    <div className={'podCastMetaContent'}>
+                                                        <span className={'podSpan0'}>Tags:</span>
+                                                        {podcast_metadata.tag.map((tag, index) => (
+                                                            <span className={'podSpan1'} key={index}>
+                                                                {tag}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}*/}
+                                            </>
+                                        )}
+                                    </div>
 
-                                                {/* Comments */}
-                                                <div className="video-comments" style={{ marginTop: '1rem' }}>
-                                                    <h4>Comments</h4>
+                                    <div className={'welcomeSec'}>
+                                        <div>
+                                            <h5><em>Upload Preview</em></h5>
 
-                                                    {(() => {
-                                                        const list = comments[episode.slug] ?? [];
-                                                        const needsScroll = list.length > 3;
+                                            {videoUrl && (
+                                                <div className={'vidPreHolder'}>
+                                                    <video className={'videoContent'} controls width="100%">
+                                                        <source src={videoUrl} type="video/mp4" />
+                                                        Your browser does not support the video tag.
+                                                    </video>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
-                                                        return (
+                            {activeTab === 'episodes' && (
+                                <div className={'actEpisodeContent'}>
+                                    <div className={'actEpisodeItem0'}>
+                                        <h2>Your Collection of Episodes</h2>
+                                    </div>
+
+                                    <div className={'actEpisodeItem1'}>
+                                        <div className={'actEpiSubItem0'}>
+                                            {loadingEpisodes && (
+                                                <div className={'aeSubItem0'}>Loading your episodes…</div>
+                                            )}
+                                            {!loadingEpisodes && episodes.length === 0 && (
+                                                <div className={'aeSubItem0'}>No episodes yet. Try uploading a video!</div>
+                                            )}
+
+                                            {!loadingEpisodes &&
+                                                episodes.map((episode: Episode) => (
+                                                    <div className={'aeSubItem0'} key={episode.id}>
+                                                        <div className={'aeSubItemContent'}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                <h3 style={{ margin: 0 }}>{episode.title}</h3>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-sm btn-outline-secondary"
+                                                                    onClick={() => openEditTitle(episode)}
+                                                                    title="Edit episode title"
+                                                                >
+                                                                    ✏️ Edit
+                                                                </button>
+                                                            </div>
+                                                            <p>{episode.description}</p>
+
+                                                            {/* Show video if present */}
+                                                            {episode.videoUrl && (
+                                                                <div className={'aeSubItem1'}>
+                                                                    <video
+                                                                        controls
+                                                                        width="100%"
+                                                                        style={{ maxWidth: 600, borderRadius: 8 }}
+                                                                    >
+                                                                        <source src={episode.videoUrl} type="video/mp4" />
+                                                                        Your browser does not support the video tag.
+                                                                    </video>
+                                                                </div>
+                                                            )}
+
+                                                            <div className={'aeSubItem2'}>
+                                                    <span>
+                                                      {episode.publishDate
+                                                          ? `Published: ${episode.publishDate}`
+                                                          : 'Unpublished'}
+                                                    </span>
+                                                            </div>
+
+                                                            {/* Likes */}
                                                             <div
-                                                                className={`comments-list ${needsScroll ? 'scrollable' : ''}`}
                                                                 style={{
-                                                                    marginBottom: '0.5rem',
-                                                                    maxHeight: needsScroll ? 280 : 'none',
-                                                                    overflowY: needsScroll ? 'auto' : 'visible',
+                                                                    marginTop: '0.5rem',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '0.5rem',
                                                                 }}
                                                             >
+                                                                <span>❤️ {episode.likeCount ?? 0} Likes</span>
+                                                                <button
+                                                                    style={{
+                                                                        background: 'rgba(240,79,79,0)',
+                                                                        color: 'white',
+                                                                        border: 'none',
+                                                                        borderRadius: '4px',
+                                                                        padding: '0.25rem 0.5rem',
+                                                                        cursor: 'pointer',
+                                                                    }}
+                                                                    onClick={() => handleLike(episode.slug)}
+                                                                >
+                                                                    Like
+                                                                </button>
+                                                            </div>
 
-                                                            {list.map((comment) => (
-                                                                    <div key={comment.id} style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}>
-                                                                        {/* HEADER: avatar/name left, ⋮ right */}
+                                                            {/* Comments */}
+                                                            <div className="video-comments" style={{ marginTop: '1rem' }}>
+                                                                <h4>Comments</h4>
+
+                                                                {(() => {
+                                                                    const list = comments[episode.slug] ?? [];
+                                                                    const needsScroll = list.length > 3;
+
+                                                                    return (
                                                                         <div
+                                                                            className={`comments-list ${needsScroll ? 'scrollable' : ''}`}
                                                                             style={{
-                                                                                display: 'flex',
-                                                                                alignItems: 'center',
-                                                                                justifyContent: 'space-between',
-                                                                                gap: '0.5rem',
+                                                                                marginBottom: '0.5rem',
+                                                                                maxHeight: needsScroll ? 280 : 'none',
+                                                                                overflowY: needsScroll ? 'auto' : 'visible',
                                                                             }}
                                                                         >
-                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                                                {comment.podcast_metadata?.avatar_url && (
-                                                                                    <img
-                                                                                        src={comment.podcast_metadata.avatar_url}
-                                                                                        alt="avatar"
-                                                                                        style={{ width: 28, height: 28, borderRadius: '50%' }}
-                                                                                    />
-                                                                                )}
-                                                                                <strong>{comment.podcast_metadata?.name || 'User'}:</strong>
-                                                                            </div>
 
-                                                                            <CommentActions
-                                                                                visible={user?.id === comment.user_id && editingCommentId !== comment.id}
-                                                                                onEdit={() => beginEdit(comment.id, comment.content)}
-                                                                                onDelete={() => deleteComment(episode.slug, comment.id)}
-                                                                                menuKey={`episodes-${comment.id}`}
-                                                                            />
-                                                                        </div>
-
-                                                                        {/* BODY */}
-                                                                        {editingCommentId === comment.id ? (
-                                                                            <>
-                <textarea
-                    value={editingText}
-                    onChange={(e) => setEditingText(e.target.value)}
-                    rows={2}
-                    style={{
-                        width: '100%',
-                        padding: '0.5rem',
-                        borderRadius: 6,
-                        border: '1px solid #ccc',
-                        marginTop: 8,
-                    }}
-                />
-                                                                                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                                                                                    <button
-                                                                                        className="btn btn-success btn-sm"
-                                                                                        disabled={savingEdit || !editingText.trim()}
-                                                                                        onClick={() => saveEdit(episode.slug, comment.id)}
+                                                                            {list.map((comment) => (
+                                                                                <div key={comment.id} style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+                                                                                    {/* HEADER: avatar/name left, ⋮ right */}
+                                                                                    <div
+                                                                                        style={{
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            justifyContent: 'space-between',
+                                                                                            gap: '0.5rem',
+                                                                                        }}
                                                                                     >
-                                                                                        {savingEdit ? 'Saving…' : 'Save'}
-                                                                                    </button>
-                                                                                    <button className="btn btn-outline-secondary btn-sm" onClick={cancelCommentEdit}>
-                                                                                        Cancel
-                                                                                    </button>
-                                                                                </div>
-                                                                            </>
-                                                                        ) : (
-                                                                            <>
-                                                                                <div style={{ marginTop: '0.25rem' }}>{comment.content}</div>
-                                                                                <div style={{ fontSize: '0.75rem', color: '#888' }}>
-                                                                                    {new Date(comment.created_at).toLocaleString()}
-                                                                                </div>
-                                                                            </>
-                                                                        )}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        );
-                                                    })()}
+                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                                            {comment.podcast_metadata?.avatar_url && (
+                                                                                                <img
+                                                                                                    src={comment.podcast_metadata.avatar_url}
+                                                                                                    alt="avatar"
+                                                                                                    style={{ width: 28, height: 28, borderRadius: '50%' }}
+                                                                                                />
+                                                                                            )}
+                                                                                            <strong>{comment.podcast_metadata?.name || 'User'}:</strong>
+                                                                                        </div>
 
-                                                    <textarea
-                                                        placeholder="Add a comment..."
-                                                        value={newComment[episode.slug] || ''}
-                                                        onChange={(e) => setNewComment((prev) => ({ ...prev, [episode.slug]: e.target.value }))}
-                                                        rows={2}
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '0.5rem',
-                                                            borderRadius: '6px',
-                                                            border: '1px solid #ccc',
-                                                            marginBottom: '0.25rem',
-                                                        }}
-                                                    />
-                                                    <button
-                                                        onClick={() => handleCommentSubmit(episode.slug)}
-                                                        className="btn btn-success"
-                                                        style={{ borderRadius: '6px' }}
-                                                    >
-                                                        Post Comment
-                                                    </button>
-                                                </div>
+                                                                                        <CommentActions
+                                                                                            visible={user?.id === comment.user_id && editingCommentId !== comment.id}
+                                                                                            onEdit={() => beginEdit(comment.id, comment.content)}
+                                                                                            onDelete={() => deleteComment(episode.slug, comment.id)}
+                                                                                            menuKey={`episodes-${comment.id}`}
+                                                                                        />
+                                                                                    </div>
+
+                                                                                    {/* BODY */}
+                                                                                    {editingCommentId === comment.id ? (
+                                                                                        <>
+                                                                                <textarea
+                                                                                    value={editingText}
+                                                                                    onChange={(e) => setEditingText(e.target.value)}
+                                                                                    rows={2}
+                                                                                    style={{
+                                                                                        width: '100%',
+                                                                                        padding: '0.5rem',
+                                                                                        borderRadius: 6,
+                                                                                        border: '1px solid #ccc',
+                                                                                        marginTop: 8,
+                                                                                    }}
+                                                                                />
+                                                                                            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                                                                                                <button
+                                                                                                    className="btn btn-success btn-sm"
+                                                                                                    disabled={savingEdit || !editingText.trim()}
+                                                                                                    onClick={() => saveEdit(episode.slug, comment.id)}
+                                                                                                >
+                                                                                                    {savingEdit ? 'Saving…' : 'Save'}
+                                                                                                </button>
+                                                                                                <button className="btn btn-outline-secondary btn-sm" onClick={cancelCommentEdit}>
+                                                                                                    Cancel
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        </>
+                                                                                    ) : (
+                                                                                        <>
+                                                                                            <div style={{ marginTop: '0.25rem' }}>{comment.content}</div>
+                                                                                            <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                                                                                                {new Date(comment.created_at).toLocaleString()}
+                                                                                            </div>
+                                                                                        </>
+                                                                                    )}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    );
+                                                                })()}
+
+                                                                <textarea
+                                                                    placeholder="Add a comment..."
+                                                                    value={newComment[episode.slug] || ''}
+                                                                    onChange={(e) => setNewComment((prev) => ({ ...prev, [episode.slug]: e.target.value }))}
+                                                                    rows={2}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        padding: '0.5rem',
+                                                                        borderRadius: '6px',
+                                                                        border: '1px solid #ccc',
+                                                                        marginBottom: '0.25rem',
+                                                                    }}
+                                                                />
+                                                                <button
+                                                                    onClick={() => handleCommentSubmit(episode.slug)}
+                                                                    className="btn btn-success"
+                                                                    style={{ borderRadius: '6px' }}
+                                                                >
+                                                                    Post Comment
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className={'aeSubItemContent0'}>
+                                                  <span
+                                                      style={{
+                                                          backgroundColor: getStatusColor(episode.status) + '20',
+                                                          color: getStatusColor(episode.status),
+                                                      }}
+                                                  >
+                                                    {getStatusText(episode.status)}
+                                                  </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {editModalOpen && (
+                                <div
+                                    className="modal fade show"
+                                    role="dialog"
+                                    style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}
+                                    aria-modal="true"
+                                >
+                                    <div className="modal-dialog">
+                                        <div className="modal-content">
+                                            <div className="modal-header">
+                                                <h5 className="modal-title">Edit Episode Title</h5>
+                                                <button
+                                                    type="button"
+                                                    className="btn-close"
+                                                    aria-label="Close"
+                                                    onClick={() => !savingTitle && setEditModalOpen(false)}
+                                                />
                                             </div>
 
-                                            <div className={'aeSubItemContent0'}>
-                      <span
-                          style={{
-                              backgroundColor: getStatusColor(episode.status) + '20',
-                              color: getStatusColor(episode.status),
-                          }}
-                      >
-                        {getStatusText(episode.status)}
-                      </span>
+                                            <div className="modal-body">
+                                                <label className="form-label">Title</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={editingTitle}
+                                                    onChange={(e) => setEditingTitle(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') saveEditedTitle();
+                                                    }}
+                                                    autoFocus
+                                                    disabled={savingTitle}
+                                                />
+                                            </div>
+
+                                            <div className="modal-footer">
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline-secondary"
+                                                    onClick={() => !savingTitle && setEditModalOpen(false)}
+                                                    disabled={savingTitle}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-success"
+                                                    onClick={saveEditedTitle}
+                                                    disabled={savingTitle || !editingTitle.trim()}
+                                                >
+                                                    {savingTitle ? 'Saving…' : 'Save Title'}
+                                                </button>
                                             </div>
                                         </div>
-                                    ))}
-                            </div>
-                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+
+                        </main>
                     </div>
-                )}
+                    <div className="col-6">
+                        <main className={'mainSec'}>
+                            {activeTab === 'Home' && (
+                                <div>
+                                    {/* ADD: Title confirmation modal */}
+                                    {showTitleModal && (
+                                        <div
+                                            className="modal fade show"
+                                            role="dialog"
+                                            style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}
+                                            aria-modal="true"
+                                        >
+                                            <div className="modal-dialog">
+                                                <div className="modal-content">
+                                                    <div className="modal-header">
+                                                        <h5 className="modal-title">Name your episode</h5>
+                                                        <button
+                                                            type="button"
+                                                            className="btn-close"
+                                                            aria-label="Close"
+                                                            onClick={() => {
+                                                                if (!uploading) {
+                                                                    setShowTitleModal(false);
+                                                                    setPendingFile(null);
+                                                                    setPendingTitle('');
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
 
-                {editModalOpen && (
-                    <div
-                        className="modal fade show"
-                        role="dialog"
-                        style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}
-                        aria-modal="true"
-                    >
-                        <div className="modal-dialog">
-                            <div className="modal-content">
-                                <div className="modal-header">
-                                    <h5 className="modal-title">Edit Episode Title</h5>
-                                    <button
-                                        type="button"
-                                        className="btn-close"
-                                        aria-label="Close"
-                                        onClick={() => !savingTitle && setEditModalOpen(false)}
-                                    />
-                                </div>
+                                                    <div className="modal-body">
+                                                        <label className="form-label">Episode title</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            value={pendingTitle}
+                                                            onChange={(e) => setPendingTitle(e.target.value)}
+                                                            onKeyDown={(e) => {
+                                                                if (
+                                                                    e.key === 'Enter' &&
+                                                                    pendingFile &&
+                                                                    pendingTitle.trim()
+                                                                ) {
+                                                                    handleVideoUpload(
+                                                                        pendingFile,
+                                                                        pendingTitle.trim()
+                                                                    );
+                                                                    setShowTitleModal(false);
+                                                                    setPendingFile(null);
+                                                                    setPendingTitle('');
+                                                                }
+                                                            }}
+                                                            autoFocus
+                                                            placeholder="e.g., My First Episode"
+                                                            disabled={uploading}
+                                                        />
+                                                        <small className="text-muted">
+                                                            You can update this later from the Episodes tab.
+                                                        </small>
+                                                    </div>
 
-                                <div className="modal-body">
-                                    <label className="form-label">Title</label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        value={editingTitle}
-                                        onChange={(e) => setEditingTitle(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') saveEditedTitle();
-                                        }}
-                                        autoFocus
-                                        disabled={savingTitle}
-                                    />
-                                </div>
+                                                    <div className="modal-footer">
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-outline-secondary"
+                                                            onClick={() => {
+                                                                if (!uploading) {
+                                                                    setShowTitleModal(false);
+                                                                    setPendingFile(null);
+                                                                    setPendingTitle('');
+                                                                }
+                                                            }}
+                                                            disabled={uploading}
+                                                        >
+                                                            Cancel
+                                                        </button>
 
-                                <div className="modal-footer">
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary"
-                                        onClick={() => !savingTitle && setEditModalOpen(false)}
-                                        disabled={savingTitle}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn btn-success"
-                                        onClick={saveEditedTitle}
-                                        disabled={savingTitle || !editingTitle.trim()}
-                                    >
-                                        {savingTitle ? 'Saving…' : 'Save Title'}
-                                    </button>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-success"
+                                                            onClick={() => {
+                                                                if (pendingFile && pendingTitle.trim()) {
+                                                                    handleVideoUpload(
+                                                                        pendingFile,
+                                                                        pendingTitle.trim()
+                                                                    );
+                                                                    setShowTitleModal(false);
+                                                                    setPendingFile(null);
+                                                                    setPendingTitle('');
+                                                                }
+                                                            }}
+                                                            disabled={
+                                                                !pendingTitle.trim() || !pendingFile || uploading
+                                                            }
+                                                        >
+                                                            {uploading ? 'Uploading…' : 'Confirm & Upload'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Stats Grid */}
+                                    <div className={'statContent'}>
+                                        <div className={'statHolder'}>
+                                            <h3>Total Episodes</h3>
+                                            <p>{stats.totalEpisodes}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className={'welcomeSec'}>
+                                        <div className={'txtC'}>
+                                            <h3>Ready for your next <strong>Upload!</strong></h3>
+
+                                            <div
+                                                className={'videoDragDrop'}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                    e.preventDefault();
+                                                    const file = e.target.files?.[0];
+                                                    if (file) startVideoUploadFlow(file);
+                                                }}
+                                                onDragOver={(e) => e.preventDefault()}
+                                                onClick={() =>
+                                                    document.getElementById('videoInput')?.click()
+                                                }
+                                            >
+                                                <p>Drag and drop your video file here, or click to select</p>
+
+                                                <input
+                                                    id="videoInput"
+                                                    type="file"
+                                                    accept="video/*"
+                                                    style={{ display: 'none' }}
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) startVideoUploadFlow(file);
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Recent Episodes */}
+                                    <div className={'recentEpisodeContent'}>
+                                        <h2>Your Episodes</h2>
+                                        <p>
+                                            <em>
+                                                Episodes with the most likes will automatically show towards the
+                                                top of this list!
+                                            </em>
+                                        </p>
+
+                                        <div
+                                            className={'episodeContent'}
+                                            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+                                        >
+                                            {recentVideos.map((video) => (
+                                                <div className={'recentVid'} key={video.slug}>
+                                                    <video width="100%" height="auto" controls src={video.publicUrl} />
+                                                    <span className={'vidSpan0'}>{video.name}</span>
+                                                    <span className={'vidSpan1'}>
+                                            Uploaded on {new Date(video.createdAt).toLocaleDateString()}
+                                        </span>
+
+                                                    {/* Like Button */}
+                                                    <div
+                                                        style={{
+                                                            marginTop: '0.5rem',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.5rem',
+                                                        }}
+                                                    >
+                                                        <span>❤️ {video.likeCount ?? 0} Likes</span>
+                                                        <button
+                                                            style={{
+                                                                background: 'rgba(240,79,79,0)',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                padding: '0.25rem 0.5rem',
+                                                                cursor: 'pointer',
+                                                            }}
+                                                            onClick={() => handleLike(video.slug)}
+                                                        />
+                                                    </div>
+
+                                                    {/* Comments Section */}
+                                                    <div className={'video-comments'} style={{ marginTop: '1rem' }}>
+                                                        <h4>Comments</h4>
+
+                                                        {(() => {
+                                                            const list = comments[video.slug] ?? [];
+                                                            const needsScroll = list.length > 3;
+
+                                                            return (
+                                                                <div
+                                                                    className={`comments-list ${needsScroll ? 'scrollable' : ''}`}
+                                                                    style={{
+                                                                        marginBottom: '0.5rem',
+                                                                        maxHeight: needsScroll ? 280 : 'none',
+                                                                        overflowY: needsScroll ? 'auto' : 'visible',
+                                                                    }}
+                                                                >
+                                                                    {list.map((comment) => (
+                                                                        <div
+                                                                            key={comment.id}
+                                                                            style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}
+                                                                        >
+                                                                            {/* HEADER with avatar/name left, ⋮ right */}
+                                                                            <div
+                                                                                style={{
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    justifyContent: 'space-between',
+                                                                                    gap: '0.5rem',
+                                                                                }}
+                                                                            >
+                                                                                <div
+                                                                                    style={{
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        gap: '0.5rem',
+                                                                                    }}
+                                                                                >
+                                                                                    {comment.podcast_metadata?.avatar_url && (
+                                                                                        <img
+                                                                                            src={comment.podcast_metadata.avatar_url}
+                                                                                            alt="avatar"
+                                                                                            style={{
+                                                                                                width: 28,
+                                                                                                height: 28,
+                                                                                                borderRadius: '50%',
+                                                                                            }}
+                                                                                        />
+                                                                                    )}
+                                                                                    <strong>
+                                                                                        {comment.podcast_metadata?.name || 'User'}:
+                                                                                    </strong>
+                                                                                </div>
+
+                                                                                <CommentActions
+                                                                                    visible={
+                                                                                        user?.id === comment.user_id &&
+                                                                                        editingCommentId !== comment.id
+                                                                                    }
+                                                                                    onEdit={() => beginEdit(comment.id, comment.content)}
+                                                                                    onDelete={() => deleteComment(video.slug, comment.id)}
+                                                                                    menuKey={`home-${comment.id}`}
+                                                                                />
+                                                                            </div>
+
+                                                                            {/* BODY */}
+                                                                            {editingCommentId === comment.id ? (
+                                                                                <>
+                                                                        <textarea
+                                                                            value={editingText}
+                                                                            onChange={(e) => setEditingText(e.target.value)}
+                                                                            rows={2}
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                padding: '0.5rem',
+                                                                                borderRadius: 6,
+                                                                                border: '1px solid #ccc',
+                                                                                marginTop: 8,
+                                                                            }}
+                                                                        />
+                                                                                    <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                                                                                        <button
+                                                                                            className="btn btn-success btn-sm"
+                                                                                            disabled={savingEdit || !editingText.trim()}
+                                                                                            onClick={() => saveEdit(video.slug, comment.id)}
+                                                                                        >
+                                                                                            {savingEdit ? 'Saving…' : 'Save'}
+                                                                                        </button>
+                                                                                        <button
+                                                                                            className="btn btn-outline-secondary btn-sm"
+                                                                                            onClick={cancelEdit}
+                                                                                        >
+                                                                                            Cancel
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <div style={{ marginTop: '0.25rem' }}>
+                                                                                        {comment.content}
+                                                                                    </div>
+                                                                                    <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                                                                                        {new Date(comment.created_at).toLocaleString()}
+                                                                                    </div>
+                                                                                </>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            );
+                                                        })()}
+
+                                                        <textarea
+                                                            placeholder="Add a comment..."
+                                                            value={newComment[video.slug] || ''}
+                                                            onChange={(e) =>
+                                                                setNewComment((prev) => ({
+                                                                    ...prev,
+                                                                    [video.slug]: e.target.value,
+                                                                }))
+                                                            }
+                                                            rows={2}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '0.5rem',
+                                                                borderRadius: '6px',
+                                                                border: '1px solid #ccc',
+                                                                marginBottom: '0.25rem',
+                                                            }}
+                                                        />
+                                                        <button
+                                                            onClick={() => handleCommentSubmit(video.slug)}
+                                                            style={{
+                                                                padding: '0.5rem 1rem',
+                                                                backgroundColor: '#1A8C67',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            Post Comment
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Shareable Link */}
+                                                    {video.slug && (
+                                                        <div className={'vidShare'}>
+                                                            <a
+                                                                href={`/videos/${video.slug}`}
+                                                                target="_self"
+                                                                rel="noopener noreferrer"
+                                                            >
+                                                                <img
+                                                                    className={'img-fluid'}
+                                                                    src="/Drawable/share.png"
+                                                                    alt="Share by Pexel Perfect"
+                                                                />{' '}
+                                                                Share
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            )}
+
+                            {editModalOpen && (
+                                <div
+                                    className="modal fade show"
+                                    role="dialog"
+                                    style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}
+                                    aria-modal="true"
+                                >
+                                    <div className="modal-dialog">
+                                        <div className="modal-content">
+                                            <div className="modal-header">
+                                                <h5 className="modal-title">Edit Episode Title</h5>
+                                                <button
+                                                    type="button"
+                                                    className="btn-close"
+                                                    aria-label="Close"
+                                                    onClick={() => !savingTitle && setEditModalOpen(false)}
+                                                />
+                                            </div>
+
+                                            <div className="modal-body">
+                                                <label className="form-label">Title</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={editingTitle}
+                                                    onChange={(e) => setEditingTitle(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') saveEditedTitle();
+                                                    }}
+                                                    autoFocus
+                                                    disabled={savingTitle}
+                                                />
+                                            </div>
+
+                                            <div className="modal-footer">
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline-secondary"
+                                                    onClick={() => !savingTitle && setEditModalOpen(false)}
+                                                    disabled={savingTitle}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-success"
+                                                    onClick={saveEditedTitle}
+                                                    disabled={savingTitle || !editingTitle.trim()}
+                                                >
+                                                    {savingTitle ? 'Saving…' : 'Save Title'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+
+                        </main>
                     </div>
-                )}
-            </main>
+                </div>
+            </div>
 
             <style>{`
-      @keyframes slideInRight {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-    `}</style>
+                  @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                  }
+            `}</style>
+
+            {/* Footer */}
+            <footer className="container-fluid footer lightMode">
+                <div className="row p-2">
+                    <div className="col-12 text-center p-1">
+                        <img src="/Drawable/PodPilot-Logo-web.png"
+                             alt="PodPilot Logo"/>
+                        <p className={'p-1'}>
+                            &#169; Copy Right 2025, Presented by PodPilot
+                        </p>
+
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 };

@@ -1,8 +1,79 @@
 /*Homepage Area*/
+
+
 .me-auto{
     margin-right: 0 !important;
     margin-left: auto !important;
 }
+
+/*LightMode*/
+.lightMode{
+    background-color: #E4F9F5 !important;
+    color: #000 !important;
+}
+
+.lightMode #loginButton, .post_bannerLM .btn, .slogan .translate-button,
+.modal-content button.btn{
+    color: #fff !important;
+    background-color: #40514E !important;
+    border-color: #30E3CA !important;
+}
+.lightMode #loginButton:hover, .post_bannerLM .btn:hover, .slogan .translate-button:hover,
+.modal-content button.btn:hover{
+    color: #000 !important;
+    background-color: #30E3CA !important;
+    border-color: #40514E !important;
+}
+
+.post_bannerLM{
+    background-color: #c8dfdb !important;
+    color: #000000 !important;
+}
+
+.logoDM{
+    display: none;
+}
+
+.modalLM{
+    background-color: #E4F9F5 !important;
+    color: #000 !important;
+    border: #000 !important;
+}
+
+/*end*/
+
+/*DarkMode*/
+/*.darkMode{
+    display: none;
+    background-color: #000 !important;
+    color: #fff !important;
+}
+
+.darkMode #loginButton, .post_bannerDM .btn, .slogan button.translate-button,
+.modal-content button.btn{
+    color: #000 !important;
+    background-color: #E4F9F5 !important;
+    border-color: #30E3CA !important;
+}
+.darkMode #loginButton:hover, .post_bannerDM .btn:hover, .slogan button.translate-button:hover,
+.modal-content button.btn:hover{
+    color: #000 !important;
+    background-color: #30E3CA !important;
+    border-color: #40514E !important;
+}
+
+.post_bannerDM{
+    background-color: #111312 !important;
+    color: #fff !important;
+}
+
+.modalDM{
+    background-color: #111312 !important;
+    color: #fff !important;
+    border: #fff !important;
+}*/
+
+/*end*/
 
 .navbar-brand img{
     width: 50%;
@@ -24,6 +95,10 @@
     text-align: center;
 }
 
+.translate-button{
+    transform: translate(350%,0%);
+}
+
 .transition-in {
     opacity: 0;
     transform: translateY(20px);
@@ -31,16 +106,24 @@
     animation-delay: 0.5s; /* optional delay */
 }
 
-.post_banner, .footer{
-    background-color: lightslategrey;
+.translate-left{
+    transform: translate(-50%,0%)
+}
+
+.share_section{
+    justify-content: space-between;
+}
+
+.child1{
+    align-content: space-around;
+}
+
+.footer{
     width: 100%;
     height: auto;
-
-}
-
-.post_banner p{
     text-align: center;
 }
+
 /*Homepage Area Ends*/
 
 /*Dashboard Area*/

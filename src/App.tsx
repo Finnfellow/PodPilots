@@ -4,10 +4,10 @@ import Home from "./main/Home.tsx";
 import OnboardingFlow from "./components/OnboardingFlow.tsx";
 import Dashboard from "./components/Dashboard.tsx";
 import PodcasterProfile from './components/podcasterProfile.tsx';
-//import NewEpisodeUpload from "./components/NewEpisodeUpload.tsx";
 import Callback from "./components/CallBack.tsx";
 import ProtectedRoute from "../src/components/protectedRoute.tsx";
 import VideoPage from "./VideoPage.tsx";
+import Settings from "./components/Settings.tsx";
 
 function App() {
 
@@ -30,6 +30,7 @@ function App() {
             <Route path="/callback" element={<Callback />} />
             <Route path="/videos/:slug" element={<VideoPage />} />
             <Route path="/profile/:user_id" element={<PodcasterProfile />} />
+            <Route path="/settings" element={<Settings />} />
 
         </Routes>
     );

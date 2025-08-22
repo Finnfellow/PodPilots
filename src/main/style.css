@@ -836,3 +836,12 @@
 .comment {
     margin-bottom: 0.5rem;
 }
+/* Reserve space for the vertical scrollbar so content doesn't hide under it */
+.comments-list {
+    scrollbar-gutter: stable both-edges; /* modern browsers */
+}
+
+/* Extra right padding only when we’re in scroll mode */
+.comments-list.scrollable {
+    padding-right: 14px; /* nudge content (incl. ⋮) left a bit */
+}

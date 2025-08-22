@@ -1483,12 +1483,11 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
 
                                                 return (
                                                     <div
-                                                        className={'comments-list'}
+                                                        className={`comments-list ${needsScroll ? 'scrollable' : ''}`}
                                                         style={{
                                                             marginBottom: '0.5rem',
                                                             maxHeight: needsScroll ? 280 : 'none',
                                                             overflowY: needsScroll ? 'auto' : 'visible',
-                                                            paddingRight: needsScroll ? 4 : 0,
                                                         }}
                                                     >
                                                         {list.map((comment) => (
@@ -1732,15 +1731,15 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
 
                                                         return (
                                                             <div
-                                                                className="comments-list"
+                                                                className={`comments-list ${needsScroll ? 'scrollable' : ''}`}
                                                                 style={{
                                                                     marginBottom: '0.5rem',
                                                                     maxHeight: needsScroll ? 280 : 'none',
                                                                     overflowY: needsScroll ? 'auto' : 'visible',
-                                                                    paddingRight: needsScroll ? 4 : 0,
                                                                 }}
                                                             >
-                                                                {list.map((comment) => (
+
+                                                            {list.map((comment) => (
                                                                     <div key={comment.id} style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}>
                                                                         {/* HEADER: avatar/name left, ⋮ right */}
                                                                         <div

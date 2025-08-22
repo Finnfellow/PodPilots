@@ -1,84 +1,53 @@
-import React, { useRef, useState, useEffect } from 'react';
+// AvatarDropdown.tsx
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
-interface AvatarDropdownProps {
+type AvatarDropdownProps = {
     avatarUrl?: string | null;
-    displayName?: string;
+    displayName: string;
     onLogout: () => void;
-}
+};
 
 const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ avatarUrl, displayName, onLogout }) => {
-    const [open, setOpen] = useState(false); // visible or not
-    const [shouldRender, setShouldRender] = useState(false); // mount control
-    const avatarRef = useRef<HTMLDivElement>(null);
-
-    const getInitials = (name: string) => {
-        return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    };
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (avatarRef.current && !avatarRef.current.contains(event.target as Node)) {
-                setOpen(false);
-                setTimeout(() => setShouldRender(false), 200);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
+    const [open, setOpen] = useState(false);
 
     return (
-        <div ref={avatarRef} style={{ position: 'relative' }}>
-            <div
-                onClick={() => {
-                    if (open) {
-                        setOpen(false); // start close animation
-                        setTimeout(() => setShouldRender(false), 200); // delay unmount
-                    } else {
-                        setShouldRender(true); // mount
-                        setOpen(true);         // start open animation
-                    }
-                }}
-                style={{
-                    cursor: 'pointer',
-                    backgroundColor: avatarUrl ? 'transparent' : '#000',
-                    backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                    userSelect: 'none',
-                }}
+        <div style={{ position: 'relative' }}>
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="btn btn-light"
+                style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 999 }}
             >
-                {!avatarUrl && (displayName ? getInitials(displayName) : 'U')}
-            </div>
+                <img
+                    src={avatarUrl || '/default-avatar.png'}
+                    alt={displayName}
+                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
+                />
+                <span style={{ fontWeight: 600 }}>{displayName}</span>
+            </button>
 
-            {shouldRender && (
-                <div className={`avatar-dropdown ${open ? 'dropdown-enter' : 'dropdown-exit'}`}>
+            {open && (
+                <div className="avatar-dropdown dropdown-enter" onMouseLeave={() => setOpen(false)}>
+                    <Link
+                        to="/settings"
+                        onClick={() => setOpen(false)}
+                        className="btn btn-link"
+                        style={{ textDecoration: 'none', width: '100%', textAlign: 'left', padding: '6px 8px' }}
+                    >
+                        ⚙️ Settings
+                    </Link>
 
                     <button
-                        onClick={onLogout}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#333',
-                            padding: '0.5rem 1rem',
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                            fontSize: '1rem',
-                            width: '100%',
-                            fontFamily: 'Satoshi, sans-serif'
+                        type="button"
+                        className="btn btn-link"
+                        style={{ textDecoration: 'none', width: '100%', textAlign: 'left', padding: '6px 8px', color: '#b42318' }}
+                        onClick={() => {
+                            onLogout();
+                            setOpen(false);
                         }}
                     >
-                        Log out
+                        🚪 Logout
                     </button>
                 </div>
             )}

@@ -144,12 +144,20 @@ function Home() {
     return (
         <div className="container-fluid" style={{ "--bs-gutter-x": 0 } as React.CSSProperties}>
             {/* Navbar */}
-            <nav className={`navbar navbar-expand-xl sticky-top bg-body-tertiary transition-navbar ${showNavbar ? 'visible' : 'hidden'}`}>
+            <nav className={`navbar navbar-expand-xl sticky-top lightMode transition-navbar ${showNavbar ? 'visible' : 'hidden'}`}>
                 <div className="container-fluid px-3">
-                    <a className="navbar-brand" href="#">
+                    <a className="navbar-brand logoLM" href="#">
                         <img
                             className="img-fluid"
                             src="/Drawable/PodPilot-Logo-web.png"
+                            alt="PodPilot Logo"
+                        />
+                    </a>
+
+                    <a className="navbar-brand logoDM" href="#">
+                        <img
+                            className="img-fluid"
+                            src="/Drawable/PodPilot-Logo-web_light.png"
                             alt="PodPilot Logo"
                         />
                     </a>
@@ -172,18 +180,10 @@ function Home() {
                                 <>
                                     <button
                                         id="loginButton"
-                                        className="btn btn-outline-success m-1"
+                                        className="btn m-1"
                                         onClick={() => openAuth('login')}
                                     >
                                         Login
-                                    </button>
-
-                                    <button
-                                        id="signUpButton"
-                                        className="btn btn-outline-success m-1"
-                                        onClick={() => openAuth('signup')}
-                                    >
-                                        Sign Up
                                     </button>
                                 </>
                             ) : (
@@ -218,100 +218,89 @@ function Home() {
                 </video>
 
                 <div className="overlay position-absolute top-0 start-0 w-100 h-100" />
-                <div className="slogan text-center position-absolute top-50 start-50 translate-middle text-white transition-in">
-                    <img className="img-fluid mb-3" src="/Drawable/PodPilot-Wordmark_black_banner.png" alt="PodPilot Slogan" />
-                    <h3 className="text-shadow">Discover True Podcasting Freedom</h3>
+                <div className="slogan translate-middle top-50 start-50  text-white transition-in">
+                    <img className="img-fluid mb-3 translate-left" src="/Drawable/PodPilot-Wordmark_black_banner.png" alt="PodPilot Slogan" />
+                    <h1 className="text-shadow text-center">Discover True Podcasting Freedom</h1>
+                    <button
+                        className="btn position-absolute translate-button btn-lg px-4"
+                        onClick={() => openAuth('signup')}
+                    >
+                        Get Started Free
+                    </button>
                 </div>
             </div>
 
             {/* Call-to-Action Section */}
-            <div className="container my-5 text-center">
-                {!user && (
-                    <>
-                        <h2 className="mb-3">Start Growing Your Podcast Today</h2>
-                        <p className="mb-4">Join PodPilot and simplify how you publish and manage your episodes.</p>
-                        <button
-                            className="btn btn-success btn-lg px-4"
-                            onClick={() => openAuth('signup')}
-                        >
-                            Get Started Free
-                        </button>
+            <div className="container-fluid post_bannerLM">
 
-                    </>
-                )}
-            </div>
+                <div className="container py-4">
 
-             {/*Post Banner Section*/}
-            <div className="container-fluid p-3 post_banner">
-                <div className="row" >
-                    <div className="col-5" style={{margin:'auto'}}>
-                        <h3>
-                            Share and Grow
-                        </h3>
-                        <p style={{textAlign: 'left'}}>
-                            Share your favorite video content and Podcasters on <strong>PodPilot</strong>.
-                            Enlighten yourself and others with unique ideas or views!
-                            PodPilot will increase your social reach as a Podcaster.
-                        </p>
-                        <button
-                            className="btn btn-success btn-lg px-4 txtC"
-                            onClick={async () => {
-                                await supabase.auth.signInWithOAuth({
-                                    provider: 'google',
-                                    options: {
-                                        redirectTo: window.location.origin + '/onboarding',
-                                    },
-                                });
-                            }}
-                        >
-                            Get Started Free
-                        </button>
+                    <div className="row p-4 share_section" >
+                        <div className="col-5 child1">
+                            <h2 className="py-2">
+                                Share and Grow
+                            </h2>
+                            <p className="py-2">
+                                Share your favorite video content and Podcasters on <strong>PodPilot</strong>.
+                                Enlighten yourself and others with unique ideas or views!
+                                PodPilot will increase your social reach as a Podcaster.
+                            </p>
+                            <button
+                                className="btn btn-lg px-4 txtC"
+                                onClick={async () => {
+                                    await supabase.auth.signInWithOAuth({
+                                        provider: 'google',
+                                        options: {
+                                            redirectTo: window.location.origin + '/onboarding',
+                                        },
+                                    });
+                                }}
+                            >
+                                Get Started Free
+                            </button>
+                        </div>
+                        <div className="col-5">
+                            <img src="/Drawable/sharing_content.jpg" alt="Friends sharing social podcast content." className="img-fluid" />
+                        </div>
+
                     </div>
-                    <div className="col-5" style={{margin:'auto'}}>
-                        <img src="/Drawable/sharing_content.jpg" alt="Friends sharing social podcast content." className="img-fluid txtC" />
+
+                    <div className="row extra_info p-4">
+                        <div className="col-md-4 mb-4">
+                            <div className="card h-100 shadow-sm text-center">
+                                <img src="/Drawable/one_click.png" className="card-img-top" alt="Upload" />
+                                <div className="card-body">
+                                    {/*<h5 className="card-title">One-Click Publishing</h5>*/}
+                                    <p className="card-text">Distribute your podcast to all major platforms instantly from one place.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="col-md-4 mb-4">
+                            <div className="card h-100 shadow-sm text-center">
+                                <img src="/Drawable/analytics.png" className="card-img-top" alt="Analytics" />
+                                <div className="card-body">
+                                    {/*<h5 className="card-title">Real-Time Analytics</h5>*/}
+                                    <p className="card-text">Track listener trends, platform performance, and audience engagement.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="col-md-4 mb-4">
+                            <div className="card h-100 shadow-sm text-center">
+                                <img src="/Drawable/monetize.png" className="card-img-top" alt="Monetize" />
+                                <div className="card-body">
+                                    {/*<h5 className="card-title">Monetize Effortlessly</h5>*/}
+                                    <p className="card-text">Easily connect sponsors, run ads, and monetize your content directly.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
-            </div>
-
-
-
-
-            {/* Extra Info Section */}
-            <div className="container extra_info p-3">
-                <div className="row p-2">
-                    <div className="col-md-4 mb-4">
-                        <div className="card h-100 shadow-sm text-center">
-                            <img src="/Drawable/one_click.png" className="card-img-top" alt="Upload" />
-                            <div className="card-body">
-                                {/*<h5 className="card-title">One-Click Publishing</h5>*/}
-                                <p className="card-text">Distribute your podcast to all major platforms instantly from one place.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="col-md-4 mb-4">
-                        <div className="card h-100 shadow-sm text-center">
-                            <img src="/Drawable/analytics.png" className="card-img-top" alt="Analytics" />
-                            <div className="card-body">
-                                {/*<h5 className="card-title">Real-Time Analytics</h5>*/}
-                                <p className="card-text">Track listener trends, platform performance, and audience engagement.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="col-md-4 mb-4">
-                        <div className="card h-100 shadow-sm text-center">
-                            <img src="/Drawable/monetize.png" className="card-img-top" alt="Monetize" />
-                            <div className="card-body">
-                                {/*<h5 className="card-title">Monetize Effortlessly</h5>*/}
-                                <p className="card-text">Easily connect sponsors, run ads, and monetize your content directly.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
             </div>
+
 
             {authOpen && (
                 <div
@@ -321,7 +310,7 @@ function Home() {
                     aria-modal="true"
                 >
                     <div className="modal-dialog">
-                        <div className="modal-content">
+                        <div className="modal-content modalLM">
                             <div className="modal-header">
                                 <h5 className="modal-title">
                                     {authOpen === 'signup' ? 'Create your account' : 'Welcome back'}
@@ -361,25 +350,41 @@ function Home() {
                                 </div>
 
                                 <button
-                                    className="btn btn-success w-100 mb-2"
+                                    className="btn w-100 mb-2"
                                     onClick={handleEmailAuth}
                                     disabled={authLoading || !authEmail || (authOpen === 'signup' && !authPassword)}
                                 >
                                     {authLoading ? 'Please wait…' : (authOpen === 'signup' ? 'Create account' : 'Log in')}
                                 </button>
 
-                                <div className="text-center text-muted my-2">or</div>
+                                <div className="text-center my-2">or</div>
 
                                 {oauthProviders.map((provider) => (
                                     <button
                                         key={provider}
-                                        className={`btn btn-outline-dark w-100 mb-2`}
+                                        className={`btn w-100 mb-2`}
                                         onClick={() => signInWithOAuth(provider)}
                                         disabled={authLoading}
                                     >
                                         Continue with {provider.charAt(0).toUpperCase() + provider.slice(1)}
                                     </button>
                                 ))}
+
+                                <div className="text-center text-muted my-2">
+
+                                    <h6>
+                                        Don't have an account, sign-up below!
+                                    </h6>
+
+                                    <button
+                                        id="signUpButton"
+                                        className="btn m-1"
+                                        onClick={() => openAuth('signup')}
+                                    >
+                                        Sign Up
+                                    </button>
+
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -388,7 +393,7 @@ function Home() {
 
 
             {/* Footer */}
-            <footer className="container-fluid footer">
+            <footer className="container-fluid footer lightMode">
                 <div className="row p-2">
                     <div className="col-12 text-center p-1">
                         <img src="/Drawable/PodPilot-Logo-web.png"
@@ -400,6 +405,24 @@ function Home() {
                     </div>
                 </div>
             </footer>
+
+            {/*darkmode footer below*/}
+
+            {/*
+            <footer className="container-fluid footer darkMode">
+                <div className="row p-2">
+                    <div className="col-12 text-center p-1">
+                        <img src="/Drawable/PodPilot-Logo-web_light.png"
+                             alt="PodPilot Logo"/>
+                        <p className={'p-1'}>
+                            &#169; Copy Right 2025, Presented by PodPilot
+                        </p>
+
+                    </div>
+                </div>
+            </footer>
+            */}
+
         </div>
     );
 }

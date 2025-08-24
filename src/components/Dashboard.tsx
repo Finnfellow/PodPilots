@@ -1455,9 +1455,8 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                 <h2>
                                                     Welcome back, {podcast_metadata?.name || 'Creator'}! 👋
                                                 </h2>
-                                                <p>
-                                                    {podcast_metadata?.description ||
-                                                        'Upload episodes, and let listeners discover your content.'}
+                                                <p className="podcast-desc">
+                                                    {podcast_metadata?.description || 'Upload episodes, and let listeners discover your content.'}
                                                 </p>
                                             </div>
                                         </div>
@@ -1633,17 +1632,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                                 }}
                                                             >
                                                                 <span>❤️ {episode.likeCount ?? 0} Likes</span>
-                                                                <button
-                                                                    style={{
-                                                                        background: 'rgba(240,79,79,0)',
-                                                                        color: 'white',
-                                                                        border: 'none',
-                                                                        borderRadius: '4px',
-                                                                        padding: '0.25rem 0.5rem',
-                                                                        cursor: 'pointer',
-                                                                    }}
-                                                                    onClick={() => handleLike(episode.slug)}
-                                                                >
+                                                                <button className="likeBtn" onClick={() => handleLike(episode.slug)}>
                                                                     Like
                                                                 </button>
                                                             </div>
@@ -2013,17 +2002,9 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                         }}
                                                     >
                                                         <span>❤️ {video.likeCount ?? 0} Likes</span>
-                                                        <button
-                                                            style={{
-                                                                background: 'rgba(240,79,79,0)',
-                                                                color: 'white',
-                                                                border: 'none',
-                                                                borderRadius: '4px',
-                                                                padding: '0.25rem 0.5rem',
-                                                                cursor: 'pointer',
-                                                            }}
-                                                            onClick={() => handleLike(video.slug)}
-                                                        />
+                                                        <button className="likeBtn" onClick={() => handleLike(video.slug)}>
+                                                             Like
+                                                        </button>
                                                     </div>
 
                                                     {/* Comments Section */}
@@ -2364,17 +2345,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                     }}
                                                 >
                                                     <span>❤️ {episode.likeCount ?? 0} Likes</span>
-                                                    <button
-                                                        style={{
-                                                            background: 'rgba(240,79,79,0)',
-                                                            color: 'white',
-                                                            border: 'none',
-                                                            borderRadius: '4px',
-                                                            padding: '0.25rem 0.5rem',
-                                                            cursor: 'pointer',
-                                                        }}
-                                                        onClick={() => handleLike(episode.slug)}
-                                                    >
+                                                    <button className="likeBtn" onClick={() => handleLike(episode.slug)}>
                                                         Like
                                                     </button>
                                                 </div>

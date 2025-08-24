@@ -856,3 +856,25 @@
 .comments-list.scrollable {
     padding-right: 14px; /* nudge content (incl. ⋮) left a bit */
 }
+.likeBtn{
+    background:#f04f4f;
+    color:#fff;
+    border:0;
+    border-radius:4px;
+    padding:0.25rem 0.5rem;
+    cursor:pointer;
+    transition:filter .15s ease-in-out;
+}
+.likeBtn:hover{ filter:brightness(0.95); }
+
+.podcast-desc{
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
+}
+
+/* If the paragraph sits inside a flex item, allow it to shrink/wrap */
+.welcomeSec .contentHolder{
+    min-width: 0;
+}

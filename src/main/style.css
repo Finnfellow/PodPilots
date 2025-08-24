@@ -878,3 +878,13 @@
 .welcomeSec .contentHolder{
     min-width: 0;
 }
+.avatarPreview{
+    width: 96px; height: 96px; border-radius: 50%; object-fit: cover;
+    border: 1px solid #eee; background:#fff; padding: 4px;
+}
+.logoPreview{
+    width: 140px; height: 140px; object-fit: contain;
+    border: 1px solid #eee; background:#fff; padding: 6px; border-radius: 12px;
+}
+.profileUploadSec { display:flex; gap:2rem; justify-content:center; align-items:center; }
+.muted.small { color:#6c757d; font-size:.85rem; margin-top:.25rem; }

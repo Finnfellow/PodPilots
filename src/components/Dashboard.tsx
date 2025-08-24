@@ -1,8 +1,6 @@
 
 import React, { useState, useEffect} from 'react';
 import {supabase} from '../supabaseClient.ts';
-import ImageUpload from './ImageUpload.tsx';
-import { uploadImage } from "../utils/uploadImages.ts";
 import { userService, type UserProfile, type PodcastMetadata } from '../utils/cloudStorage';
 import {useLocation, useNavigate, Link} from "react-router-dom";
 import {sanitizeForStorage} from "../utils/sanatizefortorage.ts";
@@ -421,81 +419,6 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         // default title = filename (no extension)
         setPendingTitle(file.name.replace(/\.[^/.]+$/, ""));
         setShowTitleModal(true);
-    };
-
-    //new code
-    const handleAvatarUpload = async (file: File) => {
-        try {
-            const userId = user?.id || user?.sub;
-            if (!userId) throw new Error("User not authenticated");
-
-            const safeName = sanitizeForStorage(file.name);
-            const path = `avatars/${Date.now()}-${safeName}`;
-            const url = await uploadImage(file, "avatar.bucket", path);
-
-            // ✅ Store the actual path in localStorage so it can be resolved later
-            localStorage.setItem("avatarPath", path); // <-- this is new
-
-            // ✅ Update state for immediate display
-            setAvatarUrl(url);
-            setUserProfile((prev) =>
-                prev ? { ...prev, avatarUrl: url ?? undefined } : prev
-            );
-            // ✅ Update the Supabase table
-            const { error } = await supabase
-                .from("podcast_metadata")
-                .update({
-                    avatar_url: url,
-                    updated_at: new Date().toISOString()
-                })
-                .eq("user_id", userId);
-
-            if (error) throw error;
-
-            console.log("✅ Avatar uploaded and saved successfully");
-        } catch (err) {
-            console.error("❌ Avatar upload failed:", err);
-        }
-    };
-
-
-
-    const handleLogoUpload = async (file: File) => {
-        try {
-            const safeName = sanitizeForStorage(file.name);
-            const path = `logos/${Date.now()}-${safeName}`;  // ✅ Safe + unique
-            const url = await uploadImage(file, "logo.bucket", path);
-
-            // ✅ Save path in localStorage for future retrieval
-            localStorage.setItem("logoPath", path);
-
-            // ✅ Update state
-            setPodcast_metadata((prev) => ({
-                ...prev!,
-                logo_url: url ?? undefined,
-            }));
-
-            // ✅ Update full metadata in localStorage
-            localStorage.setItem(
-                "podcastMetadata",
-                JSON.stringify({
-                    ...podcast_metadata,
-                    logo_url: url,
-                })
-            );
-
-            // ✅ Optional: Update Supabase
-            const { error } = await supabase
-                .from("podcast_metadata")
-                .update({ logo_url: url, updated_at: new Date().toISOString() })
-                .eq("user_id", user?.id);
-
-            if (error) throw error;
-
-            console.log("✅ Logo uploaded and saved");
-        } catch (error) {
-            console.error("❌ Logo upload failed:", error);
-        }
     };
 
     const fetchRecentVideos = async (userId: string) => {
@@ -1464,21 +1387,21 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                         {/* Profile and Podcast Images */}
                                         <div className={'profileUploadSec'}>
                                             <div className={'txtC'}>
-                                                <ImageUpload
-                                                    currentImage={podcast_metadata?.avatar_url}
-                                                    onImageUpload={handleAvatarUpload}
-                                                    type="avatar"
-                                                    size="sm"
+                                                <img
+                                                    src={podcast_metadata?.avatar_url || '/default-avatar.png'}
+                                                    alt="Profile avatar"
+                                                    className="avatarPreview"
                                                 />
+                                                <div className="muted small">Profile photo</div>
                                             </div>
 
                                             <div className={'txtC'}>
-                                                <ImageUpload
-                                                    currentImage={podcast_metadata?.logo_url}
-                                                    onImageUpload={handleLogoUpload}
-                                                    type="podcast"
-                                                    size="sm"
+                                                <img
+                                                    src={podcast_metadata?.logo_url || '/placeholder-logo.png'}
+                                                    alt="Podcast logo"
+                                                    className="logoPreview"
                                                 />
+                                                <div className="muted small">Podcast logo</div>
                                             </div>
                                         </div>
 

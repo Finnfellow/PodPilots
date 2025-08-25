@@ -888,3 +888,20 @@
 }
 .profileUploadSec { display:flex; gap:2rem; justify-content:center; align-items:center; }
 .muted.small { color:#6c757d; font-size:.85rem; margin-top:.25rem; }
+
+.banner { position: relative; }
+
+/* overlay should NOT capture clicks */
+.overlay {
+    pointer-events: none;
+    z-index: 1;            /* still above the video */
+}
+
+/* put the slogan+button above the overlay */
+.slogan {
+    position: absolute;    /* or add Bootstrap's position-absolute */
+    z-index: 2;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%); /* same as translate-middle */
+}

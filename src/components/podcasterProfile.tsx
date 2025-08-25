@@ -1,9 +1,9 @@
 // PodcasterProfile.tsx
 import React, { useState, useEffect} from 'react';
-import { useParams,useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import AvatarDropdown from "./AvatarDropdown";
 import '../main/style.css';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 
 
 interface MediaFile {
@@ -26,6 +26,7 @@ interface CommentWithMetadata {
     content: string;
     created_at: string;
     user_id: string;
+    parent_id: string | null;
     podcast_metadata?: {
         name?: string;
         avatar_url?: string;
@@ -45,7 +46,10 @@ const PodcasterProfile: React.FC = () => {
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const navigate = useNavigate();
-
+    const [openReply, setOpenReply] = useState<Record<string, boolean>>({});
+    const [replyText, setReplyText] = useState<Record<string, string>>({});
+    const location = useLocation();
+    const [viewerMeta, setViewerMeta] = useState<{ display_name: string | null; avatar_url: string | null } | null>(null);
     // Header visibility on scroll
     const [showNavbar, setShowNavbar] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
@@ -73,7 +77,13 @@ const PodcasterProfile: React.FC = () => {
     const [searching, setSearching] = useState(false);
 
 
-
+    const requireAuth = (action: () => void) => {
+        if (!viewer?.id) {
+            navigate(`/login?next=${encodeURIComponent(location.pathname + location.search + location.hash)}`);
+            return;
+        }
+        action();
+    };
 // Sign-out
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -83,37 +93,41 @@ const PodcasterProfile: React.FC = () => {
 
     // ---- fetch creator + videos ----
     useEffect(() => {
-        const fetchData = async () => {
+        (async () => {
             const { data: sessionData } = await supabase.auth.getSession();
-            setViewer(sessionData?.session?.user ?? null);
+            const me = sessionData?.session?.user ?? null;
+            setViewer(me);
+            if (me?.id) {
+                const { data: myMeta } = await supabase
+                    .from('podcast_metadata')
+                    .select('display_name, avatar_url')
+                    .eq('user_id', me.id)
+                    .single();
+                setViewerMeta(myMeta ?? null);
+            }
+        })();
+    }, []);
 
-            // metadata
-            const { data: meta, error: metaError } = await supabase
+// 2) Runs when you navigate to a different creator profile
+    useEffect(() => {
+        if (!user_id) return;
+        (async () => {
+            const { data: meta } = await supabase
                 .from('podcast_metadata')
                 .select('display_name, description, avatar_url')
                 .eq('user_id', user_id)
                 .single();
-            if (metaError) {
-                console.error('❌ Failed to fetch metadata:', metaError);
-                return;
-            }
-            setMetadata(meta);
+            setMetadata(meta ?? null);
 
-            // videos
-            const { data: videoData, error: videoError } = await supabase
+            const { data: videoData } = await supabase
                 .from('media_files')
                 .select('file_name, public_url, uploaded_at, slug, like_count')
                 .eq('user_id', user_id)
                 .eq('type', 'video')
                 .order('uploaded_at', { ascending: false });
-            if (videoError) {
-                console.error('❌ Failed to fetch videos:', videoError);
-                return;
-            }
-            setVideos(videoData ?? []);
-        };
 
-        if (user_id) fetchData();
+            setVideos(videoData ?? []);
+        })();
     }, [user_id]);
 
     // ---- fetch comments whenever videos change ----
@@ -130,6 +144,7 @@ const PodcasterProfile: React.FC = () => {
           content,
           created_at,
           user_id,
+            parent_id,
           podcast_metadata (
             name,
             avatar_url
@@ -174,6 +189,7 @@ const PodcasterProfile: React.FC = () => {
             content,
             created_at,
             user_id,
+              parent_id,
             podcast_metadata (
               name,
               avatar_url
@@ -244,6 +260,40 @@ const PodcasterProfile: React.FC = () => {
             return;
         }
         setNewComment(prev => ({ ...prev, [slug]: '' }));
+    };
+    const handleReplySubmit = async (slug: string, parentId: string) => {
+        const text = (replyText[parentId] || '').trim();
+        if (!text || !viewer?.id) return;
+
+        const { error } = await supabase
+            .from('video_comments')
+            .insert({ slug, content: text, user_id: viewer.id, parent_id: parentId });
+
+        if (error) {
+            console.error('❌ Failed to post reply:', error.message);
+            return;
+        }
+
+        // (Optional) notify parent author
+        const { data: parentRow } = await supabase
+            .from('video_comments')
+            .select('user_id, slug')
+            .eq('id', parentId)
+            .single();
+
+        const parentAuthorId = parentRow?.user_id;
+        if (parentAuthorId && parentAuthorId !== viewer.id) {
+            await supabase.from('notifications').insert({
+                user_id: parentAuthorId,
+                type: 'reply',
+                data: { slug, parent_id: parentId },
+                created_at: new Date().toISOString(),
+            });
+        }
+
+        setReplyText((p) => ({ ...p, [parentId]: '' }));
+        setOpenReply((p) => ({ ...p, [parentId]: false }));
+        // Your realtime listener will refresh the thread
     };
 
     const beginEdit = (commentId: string, currentText: string) => {
@@ -578,8 +628,8 @@ const PodcasterProfile: React.FC = () => {
                                     <div className="d-flex p-1">
                                         {/* User Avatar */}
                                         <AvatarDropdown
-                                            avatarUrl={metadata?.avatar_url}
-                                            displayName={metadata?.display_name || 'User'}
+                                            avatarUrl={viewerMeta?.avatar_url || viewer?.user_metadata?.avatar_url || undefined}
+                                            displayName={viewerMeta?.display_name || viewer?.email || 'Account'}
                                             onLogout={handleLogout}
                                         />
                                     </div>
@@ -618,17 +668,7 @@ const PodcasterProfile: React.FC = () => {
 
                                                 <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                     <span>❤️ {video.like_count ?? 0} Likes</span>
-                                                    <button
-                                                        style={{
-                                                            background: '#f04f4f',
-                                                            color: 'white',
-                                                            border: 'none',
-                                                            borderRadius: '4px',
-                                                            padding: '0.25rem 0.5rem',
-                                                            cursor: 'pointer'
-                                                        }}
-                                                        onClick={() => handleLike(video.slug, index)}
-                                                    >
+                                                    <button className="likeBtn" onClick={() => handleLike(video.slug, index)}>
                                                         Like
                                                     </button>
                                                 </div>
@@ -639,6 +679,14 @@ const PodcasterProfile: React.FC = () => {
 
                                                     {(() => {
                                                         const list = comments[video.slug] ?? [];
+
+                                                        // build children map for threading
+                                                        const childrenMap: Record<string, CommentWithMetadata[]> = {};
+                                                        for (const c of list) {
+                                                            if (c.parent_id) (childrenMap[c.parent_id] ||= []).push(c);
+                                                        }
+                                                        const roots = list.filter(c => !c.parent_id);
+
                                                         const needsScroll = list.length > 3;
 
                                                         return (
@@ -646,22 +694,15 @@ const PodcasterProfile: React.FC = () => {
                                                                 className={`comments-list ${needsScroll ? 'scrollable' : ''}`}
                                                                 style={{
                                                                     marginBottom: '0.5rem',
-                                                                    maxHeight: needsScroll ? 120 : 'none',
+                                                                    maxHeight: needsScroll ? 280 : 'none',
                                                                     overflowY: needsScroll ? 'auto' : 'visible',
-                                                                    paddingRight: needsScroll ? 16 : 0, // <-- extra space so scrollbar doesn't cover the ⋮
+                                                                    paddingRight: needsScroll ? 16 : 0, // keep the scrollbar off the ⋮
                                                                 }}
                                                             >
-                                                                {list.map((c) => (
-                                                                    <div key={c.id} style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}>
-                                                                        {/* HEADER: avatar + author on the left, ellipsis on the right */}
-                                                                        <div
-                                                                            style={{
-                                                                                display: 'flex',
-                                                                                alignItems: 'center',
-                                                                                justifyContent: 'space-between',
-                                                                                gap: '0.5rem',
-                                                                            }}
-                                                                        >
+                                                                {roots.map((c) => (
+                                                                    <div id={'comment-' + c.id} key={c.id} style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+                                                                        {/* HEADER: avatar + author on left, ellipsis on right */}
+                                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                                                 {c.podcast_metadata?.avatar_url && (
                                                                                     <img
@@ -673,7 +714,6 @@ const PodcasterProfile: React.FC = () => {
                                                                                 <strong>{c.podcast_metadata?.name || 'User'}:</strong>
                                                                             </div>
 
-                                                                            {/* owner-only actions */}
                                                                             {viewer?.id === c.user_id && editingCommentId !== c.id && (
                                                                                 <CommentActions
                                                                                     visible
@@ -685,21 +725,21 @@ const PodcasterProfile: React.FC = () => {
                                                                             )}
                                                                         </div>
 
-                                                                        {/* BODY */}
+                                                                        {/* BODY / EDIT */}
                                                                         {editingCommentId === c.id ? (
                                                                             <>
-                                                                    <textarea
-                                                                        value={editingText}
-                                                                        onChange={(e) => setEditingText(e.target.value)}
-                                                                        rows={2}
-                                                                        style={{
-                                                                            width: '100%',
-                                                                            padding: '0.5rem',
-                                                                            borderRadius: 6,
-                                                                            border: '1px solid #ccc',
-                                                                            marginTop: 8,
-                                                                        }}
-                                                                    />
+              <textarea
+                  value={editingText}
+                  onChange={(e) => setEditingText(e.target.value)}
+                  rows={2}
+                  style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      borderRadius: 6,
+                      border: '1px solid #ccc',
+                      marginTop: 8,
+                  }}
+              />
                                                                                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                                                                                     <button
                                                                                         className="btn btn-success btn-sm"
@@ -721,6 +761,96 @@ const PodcasterProfile: React.FC = () => {
                                                                                 </div>
                                                                             </>
                                                                         )}
+
+                                                                        {/* Reply toggle + input */}
+                                                                        <div style={{ marginTop: 6 }}>
+                                                                            <button
+                                                                                onClick={() => requireAuth(() => setOpenReply(p => ({ ...p, [c.id]: !p[c.id] })))}
+                                                                                style={{ background: 'transparent', border: 0, color: '#1A8C67', cursor: 'pointer', fontWeight: 600 }}
+                                                                            >
+                                                                                {openReply[c.id] ? 'Cancel reply' : 'Reply'}
+                                                                            </button>
+                                                                        </div>
+
+                                                                        {openReply[c.id] && (
+                                                                            <div style={{ marginTop: 8, paddingLeft: 36 }}>
+              <textarea
+                  placeholder="Write a reply…"
+                  value={replyText[c.id] || ''}
+                  onChange={(e) => setReplyText(prev => ({ ...prev, [c.id]: e.target.value }))}
+                  rows={2}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc' }}
+              />
+                                                                                <button
+                                                                                    onClick={() => requireAuth(() => handleReplySubmit(video.slug, c.id))}
+                                                                                    className="btn btn-success btn-sm"
+                                                                                    style={{ marginTop: 6 }}
+                                                                                    disabled={!(replyText[c.id] || '').trim()}
+                                                                                >
+                                                                                    Reply
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* CHILD REPLIES */}
+                                                                        {(childrenMap[c.id] || []).map((rep) => (
+                                                                            <div id={'comment-' + rep.id} key={rep.id} style={{ marginTop: 10, marginLeft: 36 }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                                        {rep.podcast_metadata?.avatar_url && (
+                                                                                            <img src={rep.podcast_metadata.avatar_url} alt="avatar" style={{ width: 24, height: 24, borderRadius: '50%' }} />
+                                                                                        )}
+                                                                                        <strong>{rep.podcast_metadata?.name || 'User'}:</strong>
+                                                                                    </div>
+
+                                                                                    {viewer?.id === rep.user_id && editingCommentId !== rep.id && (
+                                                                                        <CommentActions
+                                                                                            visible
+                                                                                            onEdit={() => beginEdit(rep.id, rep.content)}
+                                                                                            onDelete={() => deleteComment(video.slug, rep.id)}
+                                                                                            menuKey={`profile-${rep.id}`}
+                                                                                            deleting={deletingId === rep.id}
+                                                                                        />
+                                                                                    )}
+                                                                                </div>
+
+                                                                                {editingCommentId === rep.id ? (
+                                                                                    <>
+                  <textarea
+                      value={editingText}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      rows={2}
+                      style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          borderRadius: 6,
+                          border: '1px solid #ccc',
+                          marginTop: 8,
+                      }}
+                  />
+                                                                                        <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                                                                                            <button
+                                                                                                className="btn btn-success btn-sm"
+                                                                                                disabled={savingEdit || !editingText.trim()}
+                                                                                                onClick={() => saveEdit(video.slug, rep.id)}
+                                                                                            >
+                                                                                                {savingEdit ? 'Saving…' : 'Save'}
+                                                                                            </button>
+                                                                                            <button className="btn btn-outline-secondary btn-sm" onClick={cancelEdit}>
+                                                                                                Cancel
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <>
+                                                                                        <div style={{ marginTop: '0.25rem' }}>{rep.content}</div>
+                                                                                        <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                                                                                            {new Date(rep.created_at).toLocaleString()}
+                                                                                        </div>
+                                                                                    </>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -741,9 +871,7 @@ const PodcasterProfile: React.FC = () => {
                                                             height: '5vh'
                                                         }}
                                                     />
-                                                    <button className={'btn'}
-                                                        onClick={() => handleCommentSubmit(video.slug)}
-                                                        >
+                                                    <button className="btn" onClick={() => requireAuth(() => handleCommentSubmit(video.slug))}>
                                                         Post Comment
                                                     </button>
                                                 </div>

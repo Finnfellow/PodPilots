@@ -227,6 +227,21 @@ const PodcasterProfile: React.FC = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, [lastScrollY]);
 
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            const insideDropdown = target.closest(".search-dropdown");
+            const insideInput = target.closest("#searchInput"); // give your input an id
+
+            if (!insideDropdown && !insideInput) {
+                setResults([]); // or setOpen(false)
+            }
+        };
+
+        document.addEventListener("click", handleClick);
+        return () => document.removeEventListener("click", handleClick);
+    }, []);
+
 
     // ---- likes ----
     const handleLike = async (slug: string, index: number) => {
@@ -563,10 +578,11 @@ const PodcasterProfile: React.FC = () => {
                                                 e.preventDefault();
                                                 handleSearch();
                                             }}
-                                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                            style={{ position: 'relative', alignItems: 'center', gap: '0.5rem' }}
                                             >
                                             <input
-                                                type="text"
+                                                id="searchInput"
+                                                type="search"
                                                 placeholder="Search creators or videos"
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -694,7 +710,7 @@ const PodcasterProfile: React.FC = () => {
                                                                 className={`comments-list ${needsScroll ? 'scrollable' : ''}`}
                                                                 style={{
                                                                     marginBottom: '0.5rem',
-                                                                    maxHeight: needsScroll ? 280 : 'none',
+                                                                    maxHeight: needsScroll ? 120 : 'none',
                                                                     overflowY: needsScroll ? 'auto' : 'visible',
                                                                     paddingRight: needsScroll ? 16 : 0, // keep the scrollbar off the ⋮
                                                                 }}
@@ -880,7 +896,7 @@ const PodcasterProfile: React.FC = () => {
                                                 {/* Share */}
                                                 {video.slug && (
                                                     <div className={'vidShare'} style={{ marginTop: 8 }}>
-                                                        <a href={`/videos/${video.slug}`} target="_self" rel="noopener noreferrer">
+                                                        <a href={`/videos/${video.slug}`} target="_blank" rel="noopener noreferrer">
                                                             <img className={'img-fluid'} src="/Drawable/share.png" alt="Share" /> Share
                                                         </a>
                                                     </div>

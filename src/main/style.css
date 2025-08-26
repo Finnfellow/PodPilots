@@ -294,25 +294,24 @@
 
 .search-dropdown {
     position: absolute;
-    background: white;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: #fff;
     border: 1px solid #ccc;
-    max-height: 300px;
+    max-height: 320px;
     overflow-y: auto;
-    width: 50vh;
-    z-index: 999;
-    top: 0%; /* adjust based on your layout */
-    left: 74.7%;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    padding: 0.5rem;
-    transform: translate(-50%, 50%);
+    z-index: 2000;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: 6px 0;
 }
 
 .search-result-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem;
+    gap: 10px;
+    padding: 10px 12px;
     cursor: pointer;
     transition: background 0.2s ease;
 }

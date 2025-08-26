@@ -25,8 +25,8 @@ function Home() {
     const [authPassword, setAuthPassword] = useState('');
     const [authLoading, setAuthLoading] = useState(false);
     const [authError, setAuthError] = useState<string | null>(null);
-    type AuthProvider = 'google' ; // add others if needed
-    const oauthProviders: AuthProvider[] = ['google'];
+    //type AuthProvider = 'google' ; // add others if needed
+   // const oauthProviders: AuthProvider[] = ['google'];
 
     const openAuth = (mode: 'login' | 'signup') => {
         setAuthError(null);
@@ -46,23 +46,31 @@ function Home() {
             setAuthError(null);
 
             if (authOpen === 'signup') {
-                const { error } = await supabase.auth.signUp({
+                const { data, error } = await supabase.auth.signUp({
                     email: authEmail,
                     password: authPassword,
-                    options: { emailRedirectTo: `${window.location.origin}/onboarding` },
                 });
                 if (error) throw error;
-                alert('Check your email to confirm your account.');
+
+                // confirmations OFF => you get a session
+                if (data.session) {
+                    navigate('/auth/finish');
+                } else {
+                    // confirmations ON => email sent
+                    alert('Check your email to confirm your account.');
+                }
             } else {
                 const { error } = await supabase.auth.signInWithPassword({
                     email: authEmail,
                     password: authPassword,
                 });
                 if (error) throw error;
+                navigate('/auth/finish');
             }
 
             closeAuth();
         } catch (e: any) {
+            console.error('[Auth error]', e); // <- see exact message & status in console
             setAuthError(e?.message || 'Something went wrong');
         } finally {
             setAuthLoading(false);
@@ -71,14 +79,20 @@ function Home() {
 
 
 // generic oAuth handler
-    const signInWithOAuth = async (provider: AuthProvider) => {
+    const signInWithOAuth = async () => {
+         await supabase.auth.signOut().catch(() => {});
         await supabase.auth.signInWithOAuth({
-            provider,
+            provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/dashboard`,
+                redirectTo: `${window.location.origin}/auth/finish`,
+                queryParams: {
+                    prompt: 'select_account',          // force account chooser
+
+                },
             },
         });
     };
+
 
 
 
@@ -96,17 +110,16 @@ function Home() {
         getSession();
 
         const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-            const sessionUser = session?.user ?? null;
-            setUser(sessionUser);
-
-            // ✅ only redirect AFTER login event
-            if (event === 'SIGNED_IN' && sessionUser) {
-                const currentPath = window.location.pathname;
-                if (!currentPath.includes('/onboarding')) {
-                    navigate("/dashboard");
+            const u = session?.user ?? null;
+            if (event === 'SIGNED_IN' && u) {
+                // If we’re NOT on the decision page, you can still fall back to dashboard.
+                const p = window.location.pathname;
+                if (p === '/' || p === '/home') {
+                    navigate('/dashboard');
                 }
             }
         });
+
 
         return () => {
             listener.subscription.unsubscribe();
@@ -178,11 +191,7 @@ function Home() {
 
                             {!user ? (
                                 <>
-                                    <button
-                                        id="loginButton"
-                                        className="btn m-1"
-                                        onClick={() => openAuth('login')}
-                                    >
+                                    <button id="loginButton" className="btn m-1" onClick={() => openAuth('login')}>
                                         Login
                                     </button>
                                 </>
@@ -218,15 +227,13 @@ function Home() {
                 </video>
 
                 <div className="overlay position-absolute top-0 start-0 w-100 h-100" />
-                <div className="slogan translate-middle top-50 start-50  text-white transition-in">
+                <div className="slogan position-absolute translate-middle top-50 start-50 text-white transition-in">
                     <img className="img-fluid mb-3 translate-left" src="/Drawable/PodPilot-Wordmark_black_banner.png" alt="PodPilot Slogan" />
                     <h1 className="text-shadow text-center">Discover True Podcasting Freedom</h1>
-                    <button
-                        className="btn position-absolute translate-button btn-lg px-4"
-                        onClick={() => openAuth('signup')}
-                    >
+                    <button className="btn btn-lg px-4" onClick={() => openAuth('signup')}>
                         Get Started Free
                     </button>
+
                 </div>
             </div>
 
@@ -247,14 +254,7 @@ function Home() {
                             </p>
                             <button
                                 className="btn btn-lg px-4 txtC"
-                                onClick={async () => {
-                                    await supabase.auth.signInWithOAuth({
-                                        provider: 'google',
-                                        options: {
-                                            redirectTo: window.location.origin + '/onboarding',
-                                        },
-                                    });
-                                }}
+                                onClick={() => openAuth('signup')}
                             >
                                 Get Started Free
                             </button>
@@ -325,6 +325,19 @@ function Home() {
                                     </div>
                                 )}
 
+                                {/* OAuth first */}
+                                <div className="text-center my-2">Sign up with</div>
+                                <button
+                                    className="btn w-100 mb-2"
+                                    onClick={signInWithOAuth}
+                                    disabled={authLoading}
+                                >
+                                    Continue with Google
+                                </button>
+
+                                <div className="text-center my-2">or use email</div>
+
+                                {/* Email / password */}
                                 <div className="mb-3">
                                     <label className="form-label">Email</label>
                                     <input
@@ -337,7 +350,6 @@ function Home() {
                                     />
                                 </div>
 
-                                {/* Hide this block if you prefer magic-link only */}
                                 <div className="mb-3">
                                     <label className="form-label">Password</label>
                                     <input
@@ -356,35 +368,6 @@ function Home() {
                                 >
                                     {authLoading ? 'Please wait…' : (authOpen === 'signup' ? 'Create account' : 'Log in')}
                                 </button>
-
-                                <div className="text-center my-2">or</div>
-
-                                {oauthProviders.map((provider) => (
-                                    <button
-                                        key={provider}
-                                        className={`btn w-100 mb-2`}
-                                        onClick={() => signInWithOAuth(provider)}
-                                        disabled={authLoading}
-                                    >
-                                        Continue with {provider.charAt(0).toUpperCase() + provider.slice(1)}
-                                    </button>
-                                ))}
-
-                                <div className="text-center text-muted my-2">
-
-                                    <h6>
-                                        Don't have an account, sign-up below!
-                                    </h6>
-
-                                    <button
-                                        id="signUpButton"
-                                        className="btn m-1"
-                                        onClick={() => openAuth('signup')}
-                                    >
-                                        Sign Up
-                                    </button>
-
-                                </div>
                             </div>
                         </div>
                     </div>

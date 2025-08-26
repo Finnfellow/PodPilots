@@ -8,6 +8,7 @@ import Callback from "./components/CallBack.tsx";
 import ProtectedRoute from "../src/components/protectedRoute.tsx";
 import VideoPage from "./VideoPage.tsx";
 import Settings from "./components/Settings.tsx";
+import AuthFinish from "./components/common/AuthFinish.tsx";
 
 function App() {
 
@@ -31,6 +32,7 @@ function App() {
             <Route path="/videos/:slug" element={<VideoPage />} />
             <Route path="/profile/:user_id" element={<PodcasterProfile />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/auth/finish" element={<AuthFinish />} />
 
         </Routes>
     );

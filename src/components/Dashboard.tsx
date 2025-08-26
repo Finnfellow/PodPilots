@@ -574,55 +574,96 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         if (user?.id) await Promise.all([fetchRecentVideos(user.id), fetchUserEpisodes(user.id)]);
     };
     const handleCommentSubmit = async (slug: string) => {
-        const text = newComment[slug]?.trim();
+        const text = (newComment[slug] || '').trim();
         if (!text || !user?.id) return;
 
-        const { error } = await supabase
-            .from("video_comments")
-            .insert({ slug, content: text, user_id: user.id });
+        try {
+            // 1) Create the comment and get its id
+            const { data: inserted, error: insertErr } = await supabase
+                .from('video_comments')
+                .insert({ slug, content: text, user_id: user.id })
+                .select('id')         // keep it minimal to avoid TS6133
+                .single();
 
-        if (error) {
-            console.error("❌ Failed to submit comment:", error.message);
-            return;
+            if (insertErr) throw insertErr;
+
+            // 2) Look up the uploader (video owner)
+            const { data: vid, error: vidErr } = await supabase
+                .from('media_files')
+                .select('user_id')
+                .eq('slug', slug)
+                .single();
+
+            if (vidErr) {
+                console.error('[handleCommentSubmit] owner lookup failed:', vidErr.message);
+            } else {
+                const ownerId = vid?.user_id as string | undefined;
+
+                // 3) Notify the uploader (skip self-notify)
+                if (ownerId && ownerId !== user.id) {
+                    await supabase.from('notifications').insert({
+                        user_id: ownerId,
+                        type: 'comment',
+                        data: {
+                            slug,
+                            owner_id: ownerId,
+                            path: `/podcasters/${ownerId}`,                  // go to profile
+                            hash: inserted?.id ? `comment-${inserted.id}`    // jump to the new comment
+                                : `video-${slug}`,              // fallback anchor
+                        },
+                    });
+                }
+            }
+
+            // 4) Clear the input (realtime will refresh the thread)
+            setNewComment(prev => ({ ...prev, [slug]: '' }));
+        } catch (e: any) {
+            console.error('❌ handleCommentSubmit failed:', e?.message || e);
         }
-
-        // Clear the input; realtime will refresh the list
-        setNewComment((prev) => ({ ...prev, [slug]: "" }));
     };
     const handleReplySubmit = async (slug: string, parentId: string) => {
         const text = (replyText[parentId] || '').trim();
         if (!text || !user?.id) return;
 
-        // Insert the reply
-        const { error } = await supabase
+        // 1) create reply
+        const { error: insErr } = await supabase
             .from('video_comments')
             .insert({ slug, content: text, user_id: user.id, parent_id: parentId });
+        if (insErr) { console.error('❌ Failed to post reply:', insErr.message); return; }
 
-        if (error) {
-            console.error('❌ Failed to post reply:', error.message);
-            return;
-        }
-
-        // Optional: notify parent comment author
+        // 2) parent author
         const { data: parentRow } = await supabase
             .from('video_comments')
-            .select('user_id, slug')
+            .select('user_id')
             .eq('id', parentId)
             .single();
+        const parentAuthorId = parentRow?.user_id as string | undefined;
 
-        const parentAuthorId = parentRow?.user_id;
-        if (parentAuthorId && parentAuthorId !== user.id) {
+        // 3) video owner (uploader)
+        let ownerId: string | undefined;
+        const { data: vid } = await supabase
+            .from('media_files')
+            .select('user_id')
+            .eq('slug', slug)
+            .single();
+        ownerId = vid?.user_id;
+
+        // 4) notify parent (skip self)
+        if (parentAuthorId && parentAuthorId !== user.id && ownerId) {
             await supabase.from('notifications').insert({
                 user_id: parentAuthorId,
                 type: 'reply',
-                data: { slug, parent_id: parentId },
-                created_at: new Date().toISOString(),
+                data: {
+                    slug,
+                    owner_id: ownerId,
+                    path: `/podcasters/${ownerId}`,
+                    hash: `video-${slug}`,
+                },
             });
         }
 
         setReplyText(prev => ({ ...prev, [parentId]: '' }));
         setOpenReply(prev => ({ ...prev, [parentId]: false }));
-        // realtime on video_comments will refresh thread
     };
     // --- Notifications helpers ---
       const fetchNotifications = async () => {
@@ -638,17 +679,33 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
            setNotifLoading(false);
       };
 
-         const markAllRead = async () => {
-           if (!user?.id) return;
-           const now = new Date().toISOString();
-           await supabase
-             .from('notifications')
-             .update({ read_at: now })
-             .eq('user_id', user.id)
-             .is('read_at', null);
-           setUnreadCount(0);
-           setNotifications(prev => prev.map(n => n.read_at ? n : ({ ...n, read_at: now })));
-         };
+    const markAllRead = async () => {
+        if (!user?.id) return;
+        const now = new Date().toISOString();
+
+        // optimistic UI
+        setNotifications(prev => prev.map(n => n.read_at ? n : { ...n, read_at: now }));
+        setUnreadCount(0);
+
+        // persist
+        const { data, error } = await supabase
+            .from('notifications')
+            .update({ read_at: now })
+            .eq('user_id', user.id)
+            .is('read_at', null)
+            .select('id, read_at'); // force PostgREST to return changed rows
+
+        if (error) {
+            console.error('markAllRead failed:', error);
+            // (optional) rollback UI if you want:
+            // await fetchNotifications();
+            // re-calc unread count:
+            // const { count } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).is('read_at', null);
+            // setUnreadCount(count || 0);
+        } else {
+            console.log('markAllRead updated rows:', data?.length || 0);
+        }
+    };
 
     const beginEdit = (commentId: string, currentText: string) => {
         setEditingCommentId(commentId);
@@ -1341,14 +1398,51 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                             {notifications.map((n) => (
                                                 <div
                                                     key={n.id}
-                                                    onClick={() => {
-                                                        if (!n.read_at) markOneRead(n.id);
+                                                    onClick={async () => {
+                                                        if (!n.read_at) await markOneRead(n.id);
                                                         setShowNotifPanel(false);
-                                                        const data = n.data || {};
-                                                        if (n.type === 'reply' && data.slug) {
-                                                            navigate(`/videos/${data.slug}${data.parent_id ? `#comment-${data.parent_id}` : ''}`);
+
+                                                        const d = n.data || {};
+
+                                                        // Try to get slug
+                                                        let slug: string | undefined =
+                                                            typeof d.slug === 'string' ? d.slug :
+                                                                (typeof d.path === 'string' && d.path.startsWith('/videos/'))
+                                                                    ? d.path.split('/videos/')[1]
+                                                                    : undefined;
+
+                                                        // Try to get owner_id (use existing payload first; if missing, fetch)
+                                                        let ownerId: string | undefined =
+                                                            typeof d.owner_id === 'string' ? d.owner_id : undefined;
+
+                                                        if (!ownerId && slug) {
+                                                            const { data: mf } = await supabase
+                                                                .from('media_files')
+                                                                .select('user_id')
+                                                                .eq('slug', slug)
+                                                                .single();
+                                                            ownerId = mf?.user_id;
                                                         }
+
+                                                        // If we have both, go to profile and jump to the video card
+                                                        if (ownerId && slug) {
+                                                            return navigate(`/podcasters/${ownerId}#video-${slug}`);
+                                                        }
+
+                                                        // Fallbacks (new payloads should rarely hit this)
+                                                        const dest =
+                                                            typeof d.path === 'string' ? d.path :
+                                                                ownerId ? `/podcasters/${ownerId}` :
+                                                                    '/dashboard';
+
+                                                        const hash =
+                                                            typeof d.hash === 'string' ? `#${d.hash}` :
+                                                                slug ? `#video-${slug}` :
+                                                                    '';
+
+                                                        navigate(`${dest}${hash}`);
                                                     }}
+
                                                     style={{
                                                         padding: '10px 12px',
                                                         borderBottom: '1px solid #f2f2f2',
@@ -2222,12 +2316,21 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                             </button>
                                                         </div>
 
+
                                                         {/* Comments */}
                                                         <div className="video-comments" style={{ marginTop: '1rem' }}>
                                                             <h4>Comments</h4>
 
                                                             {(() => {
                                                                 const list = comments[episode.slug] ?? [];
+
+                                                                // build a children map for threading
+                                                                const childrenMap: Record<string, CommentWithMetadata[]> = {};
+                                                                for (const c of list) {
+                                                                    if (c.parent_id) (childrenMap[c.parent_id] ||= []).push(c);
+                                                                }
+                                                                const roots = list.filter(c => !c.parent_id);
+
                                                                 const needsScroll = list.length > 3;
 
                                                                 return (
@@ -2235,13 +2338,17 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                                         className={`comments-list ${needsScroll ? 'scrollable' : ''}`}
                                                                         style={{
                                                                             marginBottom: '0.5rem',
-                                                                            maxHeight: needsScroll ? 120 : 'none',
+                                                                            maxHeight: needsScroll ? 180 : 'none',
                                                                             overflowY: needsScroll ? 'auto' : 'visible',
+                                                                            paddingRight: needsScroll ? 12 : 0,
                                                                         }}
                                                                     >
-
-                                                                        {list.map((comment) => (
-                                                                            <div key={comment.id} style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+                                                                        {roots.map((c) => (
+                                                                            <div
+                                                                                id={'comment-' + String(c.id)}
+                                                                                key={c.id}
+                                                                                style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}
+                                                                            >
                                                                                 {/* HEADER: avatar/name left, ⋮ right */}
                                                                                 <div
                                                                                     style={{
@@ -2252,60 +2359,185 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                                                     }}
                                                                                 >
                                                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                                                        {comment.podcast_metadata?.avatar_url && (
+                                                                                        {c.podcast_metadata?.avatar_url && (
                                                                                             <img
-                                                                                                src={comment.podcast_metadata.avatar_url}
+                                                                                                src={c.podcast_metadata.avatar_url}
                                                                                                 alt="avatar"
                                                                                                 style={{ width: 28, height: 28, borderRadius: '50%' }}
                                                                                             />
                                                                                         )}
-                                                                                        <strong>{comment.podcast_metadata?.name || 'User'}:</strong>
+                                                                                        <strong>{c.podcast_metadata?.name || 'User'}:</strong>
                                                                                     </div>
 
-                                                                                    <CommentActions
-                                                                                        visible={user?.id === comment.user_id && editingCommentId !== comment.id}
-                                                                                        onEdit={() => beginEdit(comment.id, comment.content)}
-                                                                                        onDelete={() => deleteComment(episode.slug, comment.id)}
-                                                                                        menuKey={`episodes-${comment.id}`}
-                                                                                    />
+                                                                                    {user?.id === c.user_id && editingCommentId !== c.id && (
+                                                                                        <CommentActions
+                                                                                            visible
+                                                                                            onEdit={() => beginEdit(c.id, c.content)}
+                                                                                            onDelete={() => deleteComment(episode.slug, c.id)}
+                                                                                            menuKey={`episodes-${c.id}`}
+                                                                                        />
+                                                                                    )}
                                                                                 </div>
 
-                                                                                {/* BODY */}
-                                                                                {editingCommentId === comment.id ? (
+                                                                                {/* BODY / EDIT */}
+                                                                                {editingCommentId === c.id ? (
                                                                                     <>
-                                                                                <textarea
-                                                                                    value={editingText}
-                                                                                    onChange={(e) => setEditingText(e.target.value)}
-                                                                                    rows={2}
-                                                                                    style={{
-                                                                                        width: '100%',
-                                                                                        padding: '0.5rem',
-                                                                                        borderRadius: 6,
-                                                                                        border: '1px solid #ccc',
-                                                                                        marginTop: 8,
-                                                                                    }}
-                                                                                />
+                <textarea
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    rows={2}
+                    style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        borderRadius: 6,
+                        border: '1px solid #ccc',
+                        marginTop: 8,
+                    }}
+                />
                                                                                         <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                                                                                             <button
                                                                                                 className="btn btn-success btn-sm"
                                                                                                 disabled={savingEdit || !editingText.trim()}
-                                                                                                onClick={() => saveEdit(episode.slug, comment.id)}
+                                                                                                onClick={() => saveEdit(episode.slug, c.id)}
                                                                                             >
                                                                                                 {savingEdit ? 'Saving…' : 'Save'}
                                                                                             </button>
-                                                                                            <button className="btn btn-outline-secondary btn-sm" onClick={cancelCommentEdit}>
+                                                                                            <button
+                                                                                                className="btn btn-outline-secondary btn-sm"
+                                                                                                onClick={cancelCommentEdit}
+                                                                                            >
                                                                                                 Cancel
                                                                                             </button>
                                                                                         </div>
                                                                                     </>
                                                                                 ) : (
                                                                                     <>
-                                                                                        <div style={{ marginTop: '0.25rem' }}>{comment.content}</div>
+                                                                                        <div style={{ marginTop: '0.25rem' }}>{c.content}</div>
                                                                                         <div style={{ fontSize: '0.75rem', color: '#888' }}>
-                                                                                            {new Date(comment.created_at).toLocaleString()}
+                                                                                            {new Date(c.created_at).toLocaleString()}
                                                                                         </div>
                                                                                     </>
                                                                                 )}
+
+                                                                                {/* Reply toggle + input */}
+                                                                                <div style={{ marginTop: 6 }}>
+                                                                                    <button
+                                                                                        onClick={() => setOpenReply((p) => ({ ...p, [c.id]: !p[c.id] }))}
+                                                                                        style={{
+                                                                                            background: 'transparent',
+                                                                                            border: 0,
+                                                                                            color: '#1A8C67',
+                                                                                            cursor: 'pointer',
+                                                                                            fontWeight: 600,
+                                                                                        }}
+                                                                                    >
+                                                                                        {openReply[c.id] ? 'Cancel reply' : 'Reply'}
+                                                                                    </button>
+                                                                                </div>
+
+                                                                                {openReply[c.id] && (
+                                                                                    <div style={{ marginTop: 8, paddingLeft: 36 }}>
+                <textarea
+                    placeholder="Write a reply…"
+                    value={replyText[c.id] || ''}
+                    onChange={(e) =>
+                        setReplyText((prev) => ({ ...prev, [c.id]: e.target.value }))
+                    }
+                    rows={2}
+                    style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        borderRadius: 6,
+                        border: '1px solid #ccc',
+                    }}
+                />
+                                                                                        <button
+                                                                                            onClick={() => handleReplySubmit(episode.slug, c.id)}
+                                                                                            className="btn btn-success btn-sm"
+                                                                                            style={{ marginTop: 6 }}
+                                                                                            disabled={!(replyText[c.id] || '').trim()}
+                                                                                        >
+                                                                                            Reply
+                                                                                        </button>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* CHILD REPLIES */}
+                                                                                {(childrenMap[c.id] || []).map((rep) => (
+                                                                                    <div
+                                                                                        id={'comment-' + String(rep.id)}
+                                                                                        key={rep.id}
+                                                                                        style={{ marginTop: 10, marginLeft: 36 }}
+                                                                                    >
+                                                                                        <div
+                                                                                            style={{
+                                                                                                display: 'flex',
+                                                                                                alignItems: 'center',
+                                                                                                justifyContent: 'space-between',
+                                                                                                gap: '0.5rem',
+                                                                                            }}
+                                                                                        >
+                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                                                {rep.podcast_metadata?.avatar_url && (
+                                                                                                    <img
+                                                                                                        src={rep.podcast_metadata.avatar_url}
+                                                                                                        alt="avatar"
+                                                                                                        style={{ width: 24, height: 24, borderRadius: '50%' }}
+                                                                                                    />
+                                                                                                )}
+                                                                                                <strong>{rep.podcast_metadata?.name || 'User'}:</strong>
+                                                                                            </div>
+
+                                                                                            {user?.id === rep.user_id && editingCommentId !== rep.id && (
+                                                                                                <CommentActions
+                                                                                                    visible
+                                                                                                    onEdit={() => beginEdit(rep.id, rep.content)}
+                                                                                                    onDelete={() => deleteComment(episode.slug, rep.id)}
+                                                                                                    menuKey={`episodes-${rep.id}`}
+                                                                                                />
+                                                                                            )}
+                                                                                        </div>
+
+                                                                                        {editingCommentId === rep.id ? (
+                                                                                            <>
+                    <textarea
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        rows={2}
+                        style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            borderRadius: 6,
+                            border: '1px solid #ccc',
+                            marginTop: 8,
+                        }}
+                    />
+                                                                                                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                                                                                                    <button
+                                                                                                        className="btn btn-success btn-sm"
+                                                                                                        disabled={savingEdit || !editingText.trim()}
+                                                                                                        onClick={() => saveEdit(episode.slug, rep.id)}
+                                                                                                    >
+                                                                                                        {savingEdit ? 'Saving…' : 'Save'}
+                                                                                                    </button>
+                                                                                                    <button
+                                                                                                        className="btn btn-outline-secondary btn-sm"
+                                                                                                        onClick={cancelCommentEdit}
+                                                                                                    >
+                                                                                                        Cancel
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                            </>
+                                                                                        ) : (
+                                                                                            <>
+                                                                                                <div style={{ marginTop: '0.25rem' }}>{rep.content}</div>
+                                                                                                <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                                                                                                    {new Date(rep.created_at).toLocaleString()}
+                                                                                                </div>
+                                                                                            </>
+                                                                                        )}
+                                                                                    </div>
+                                                                                ))}
                                                                             </div>
                                                                         ))}
                                                                     </div>
@@ -2315,7 +2547,9 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                             <textarea
                                                                 placeholder="Add a comment..."
                                                                 value={newComment[episode.slug] || ''}
-                                                                onChange={(e) => setNewComment((prev) => ({ ...prev, [episode.slug]: e.target.value }))}
+                                                                onChange={(e) =>
+                                                                    setNewComment((prev) => ({ ...prev, [episode.slug]: e.target.value }))
+                                                                }
                                                                 rows={2}
                                                                 style={{
                                                                     width: '100%',
@@ -2333,6 +2567,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                                 Post Comment
                                                             </button>
                                                         </div>
+
                                                     </div>
 
                                                     {/*<div className={'aeSubItemContent0 pt-2'}>

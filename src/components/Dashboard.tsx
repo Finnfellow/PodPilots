@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {supabase} from '../supabaseClient.ts';
 import { userService, type UserProfile, type PodcastMetadata } from '../utils/cloudStorage';
 import {useLocation, useNavigate, Link} from "react-router-dom";
@@ -109,6 +109,8 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         description: string | null;
         public_url: string | null;
     };
+
+
     const notifRef = React.useRef<HTMLDivElement | null>(null);
     useEffect(() => {
         const onDocClick = (e: MouseEvent) => {
@@ -120,6 +122,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         document.addEventListener('pointerdown', onDocClick);
         return () => document.removeEventListener('pointerdown', onDocClick);
     }, [showNotifPanel]);
+
     const [results, setResults] = useState<SearchResult[]>([]);
     const [searching, setSearching] = useState(false);
 
@@ -229,6 +232,21 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         };
 
         fetchMetadata();
+    }, []);
+
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            const insideDropdown = target.closest(".search-dropdown");
+            const insideInput = target.closest("#searchInput"); // give your input an id
+
+            if (!insideDropdown && !insideInput) {
+                setResults([]); // or setOpen(false)
+            }
+        };
+
+        document.addEventListener("click", handleClick);
+        return () => document.removeEventListener("click", handleClick);
     }, []);
 
 
@@ -1153,10 +1171,11 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                         e.preventDefault();
                                         handleSearch();
                                     }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                    style={{ position: 'relative',display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                                     >
                                     <input
-                                        type="text"
+                                        id="searchInput"
+                                        type="search"
                                         placeholder="Search creators or videos"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -1168,7 +1187,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                         }}
                                     />
 
-                                    {results.length > 0 && (
+                                    {searchTerm.trim() && results.length > 0 && (
                                         <div className="search-dropdown">
                                             {results.map((item) =>
                                                 item.type === 'creator' ? (
@@ -2042,7 +2061,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                         <div className={'vidShare'}>
                                                             <a
                                                                 href={`/videos/${video.slug}`}
-                                                                target="_self"
+                                                                target="_blank"
                                                                 rel="noopener noreferrer"
                                                             >
                                                                 <img

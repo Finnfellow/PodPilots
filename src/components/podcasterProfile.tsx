@@ -659,7 +659,7 @@ const PodcasterProfile: React.FC = () => {
                                             gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
                                             gap: '1rem'
                                         }}
-                                    >
+                                        >
                                         {videos.map((video, index) => (
                                             <div key={video.slug} style={{ border: '1px solid #eee', borderRadius: 10, padding: '12px 12px 0 12px'}}>
                                                 <video width="100%" controls src={video.public_url} />
@@ -728,18 +728,18 @@ const PodcasterProfile: React.FC = () => {
                                                                         {/* BODY / EDIT */}
                                                                         {editingCommentId === c.id ? (
                                                                             <>
-              <textarea
-                  value={editingText}
-                  onChange={(e) => setEditingText(e.target.value)}
-                  rows={2}
-                  style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      borderRadius: 6,
-                      border: '1px solid #ccc',
-                      marginTop: 8,
-                  }}
-              />
+                                                                                <textarea
+                                                                                      value={editingText}
+                                                                                      onChange={(e) => setEditingText(e.target.value)}
+                                                                                      rows={2}
+                                                                                      style={{
+                                                                                          width: '100%',
+                                                                                          padding: '0.5rem',
+                                                                                          borderRadius: 6,
+                                                                                          border: '1px solid #ccc',
+                                                                                          marginTop: 8,
+                                                                                      }}
+                                                                                />
                                                                                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                                                                                     <button
                                                                                         className="btn btn-success btn-sm"
@@ -774,19 +774,19 @@ const PodcasterProfile: React.FC = () => {
 
                                                                         {openReply[c.id] && (
                                                                             <div style={{ marginTop: 8, paddingLeft: 36 }}>
-              <textarea
-                  placeholder="Write a reply…"
-                  value={replyText[c.id] || ''}
-                  onChange={(e) => setReplyText(prev => ({ ...prev, [c.id]: e.target.value }))}
-                  rows={2}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc' }}
-              />
+                                                                                <textarea
+                                                                                  placeholder="Write a reply…"
+                                                                                  value={replyText[c.id] || ''}
+                                                                                  onChange={(e) => setReplyText(prev => ({ ...prev, [c.id]: e.target.value }))}
+                                                                                  rows={2}
+                                                                                  style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc' }}
+                                                                                />
                                                                                 <button
                                                                                     onClick={() => requireAuth(() => handleReplySubmit(video.slug, c.id))}
                                                                                     className="btn btn-success btn-sm"
                                                                                     style={{ marginTop: 6 }}
                                                                                     disabled={!(replyText[c.id] || '').trim()}
-                                                                                >
+                                                                                 >
                                                                                     Reply
                                                                                 </button>
                                                                             </div>
@@ -816,24 +816,24 @@ const PodcasterProfile: React.FC = () => {
 
                                                                                 {editingCommentId === rep.id ? (
                                                                                     <>
-                  <textarea
-                      value={editingText}
-                      onChange={(e) => setEditingText(e.target.value)}
-                      rows={2}
-                      style={{
-                          width: '100%',
-                          padding: '0.5rem',
-                          borderRadius: 6,
-                          border: '1px solid #ccc',
-                          marginTop: 8,
-                      }}
-                  />
+                                                                                        <textarea
+                                                                                          value={editingText}
+                                                                                          onChange={(e) => setEditingText(e.target.value)}
+                                                                                          rows={2}
+                                                                                          style={{
+                                                                                              width: '100%',
+                                                                                              padding: '0.5rem',
+                                                                                              borderRadius: 6,
+                                                                                              border: '1px solid #ccc',
+                                                                                              marginTop: 8,
+                                                                                          }}
+                                                                                        />
                                                                                         <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                                                                                             <button
                                                                                                 className="btn btn-success btn-sm"
                                                                                                 disabled={savingEdit || !editingText.trim()}
                                                                                                 onClick={() => saveEdit(video.slug, rep.id)}
-                                                                                            >
+                                                                                             >
                                                                                                 {savingEdit ? 'Saving…' : 'Save'}
                                                                                             </button>
                                                                                             <button className="btn btn-outline-secondary btn-sm" onClick={cancelEdit}>

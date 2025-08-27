@@ -9,8 +9,28 @@ import ProtectedRoute from "../src/components/protectedRoute.tsx";
 import VideoPage from "./VideoPage.tsx";
 import Settings from "./components/Settings.tsx";
 import AuthFinish from "./components/common/AuthFinish.tsx";
+import {useEffect} from "react";
+import {supabase} from "./supabaseClient.ts";
 
 function App() {
+    useEffect(() => {
+        // Apply saved preference on first paint
+        const savedDark = localStorage.getItem('pp_dark') === '1';
+        document.documentElement.setAttribute('data-theme', savedDark ? 'dark' : 'light');
+
+        const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!session) {
+                // Logged out: show light theme, but DO NOT change the saved preference
+                document.documentElement.setAttribute('data-theme', 'light');
+                return;
+            }
+            // Logged in: honor saved preference
+            const preferDark = localStorage.getItem('pp_dark') === '1';
+            document.documentElement.setAttribute('data-theme', preferDark ? 'dark' : 'light');
+        });
+
+        return () => sub.subscription.unsubscribe();
+    }, []);
 
     return (
         <Routes>

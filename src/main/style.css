@@ -836,23 +836,21 @@
     width: fit-content;
     margin: auto;
 }
-.video-comments {
-    border-top: 1px solid #eee;
-    padding-top: 1rem;
-    margin-top: 1rem;
-}
 
 .comments-list {
-    margin-bottom: 1rem;
+    min-height: 160px;
+    max-height: 160px;
+    overflow-y: auto;
+    padding-right: 8px;
+    border-radius: 6px;
+    scrollbar-gutter: stable both-edges;
 }
+
 
 .comment {
     margin-bottom: 0.5rem;
 }
-/* Reserve space for the vertical scrollbar so content doesn't hide under it */
-.comments-list {
-    scrollbar-gutter: stable both-edges; /* modern browsers */
-}
+
 
 /* Extra right padding only when we’re in scroll mode */
 .comments-list.scrollable {
@@ -907,3 +905,30 @@
     top: 50%;
     transform: translate(-50%, -50%); /* same as translate-middle */
 }
+/* Composer stays pinned under the list */
+
+.comments-block
+{
+    display: flex;
+    flex-direction: column;
+    margin-top: 1rem;
+}
+
+.video-card .video-comments { display: flex; flex-direction: column; }
+
+.push-bottom {
+    flex: 1;
+}
+.media-wrap {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f3f3f3; /* subtle placeholder */
+}
+.media-wrap > video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.video-card .comment-composer { margin-top: auto; }

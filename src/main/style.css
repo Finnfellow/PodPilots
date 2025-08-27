@@ -16,12 +16,12 @@
 .modal-content button.btn, button.searchBtn{
     color: #fff !important;
     background-color: #40514E !important;
-    border-color: #30E3CA !important;
+    border-color: #0629e2 !important;
 }
 .lightMode #loginButton:hover, .post_bannerLM .btn:hover, .slogan .translate-button:hover,
 .modal-content button.btn:hover, button.searchBtn:hover{
     color: #000 !important;
-    background-color: #30E3CA !important;
+    background-color: #0629e2 !important;
     border-color: #40514E !important;
 }
 
@@ -234,11 +234,11 @@
 }
 
 .navi_buttons:hover{
-    background: #30E3CA;
+    background: #0629e2;
 }
 
 .navi_buttons.active{
-    background: #30E3CA;
+    background: #0629e2;
 }
 
 
@@ -932,3 +932,285 @@
     object-fit: cover;
 }
 .video-card .comment-composer { margin-top: auto; }
+
+
+/* === Global app-wide blue buttons === */
+:root{
+    --pp-blue: #2563eb;            /* primary blue */
+    --pp-blue-hover: #1e40af;      /* hover/active */
+    --pp-blue-ring: rgba(37,99,235,.35);
+    --pp-blue-text: #fff;
+}
+
+/* Base buttons (native + bootstrap) */
+button,
+.btn,
+[type="button"],
+[type="submit"],
+[role="button"]{
+    background-color: var(--pp-blue) !important;
+    border: 1px solid var(--pp-blue) !important;
+    color: var(--pp-blue-text) !important;
+    border-radius: 8px;            /* nice rounding, optional */
+    transition: background-color .15s ease, border-color .15s ease, filter .15s ease;
+}
+
+/* Hover/active */
+button:hover,
+.btn:hover,
+[type="button"]:hover,
+[type="submit"]:hover,
+[role="button"]:hover{
+    background-color: var(--pp-blue-hover) !important;
+    border-color: var(--pp-blue-hover) !important;
+}
+
+button:active,
+.btn:active{
+    background-color: var(--pp-blue-hover) !important;
+    border-color: var(--pp-blue-hover) !important;
+    filter: brightness(0.98);
+}
+
+/* Focus ring (keyboard) */
+button:focus,
+.btn:focus{
+    outline: 2px solid var(--pp-blue-ring) !important;
+    outline-offset: 1px;
+    box-shadow: none !important;
+}
+
+/* Disabled look */
+button:disabled,
+.btn:disabled{
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+/* Make all Bootstrap variants blue too */
+.btn-primary,
+.btn-success,
+.btn-secondary,
+.btn-danger,
+.btn-warning,
+.btn-info,
+.btn-dark,
+.btn-light,
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-success,
+.btn-outline-danger,
+.btn-outline-warning,
+.btn-outline-info,
+.btn-outline-dark,
+.btn-outline-light{
+    background-color: var(--pp-blue) !important;
+    border-color: var(--pp-blue) !important;
+    color: var(--pp-blue-text) !important;
+}
+
+/* Your custom buttons → blue */
+.searchBtn,
+.upload,
+.likeBtn,
+.navi_buttons{
+    background-color: var(--pp-blue) !important;
+    border-color: var(--pp-blue) !important;
+    color: var(--pp-blue-text) !important;
+}
+.searchBtn:hover,
+.upload:hover,
+.likeBtn:hover,
+.navi_buttons:hover{
+    background-color: var(--pp-blue-hover) !important;
+    border-color: var(--pp-blue-hover) !important;
+}
+
+/* Keep tiny menu buttons neutral so the dropdown looks clean */
+.ellipsis-btn,
+.ellipsis-menu button{
+    background: transparent !important;
+    border: 0 !important;
+    color: inherit !important;
+}
+
+/* If you had special lightMode overrides for buttons, neutralize them */
+.lightMode #loginButton,
+.post_bannerLM .btn,
+.slogan .translate-button,
+.modal-content button.btn{
+    background-color: var(--pp-blue) !important;
+    border-color: var(--pp-blue) !important;
+    color: var(--pp-blue-text) !important;
+}
+.lightMode #loginButton:hover,
+.post_bannerLM .btn:hover,
+.slogan .translate-button:hover,
+.modal-content button.btn:hover{
+    background-color: var(--pp-blue-hover) !important;
+    border-color: var(--pp-blue-hover) !important;
+}
+
+
+
+/* ===== THEME VARIABLES ===== */
+:root{
+    /* brand blues (already used for global buttons) */
+    --pp-blue: #2563eb;
+    --pp-blue-hover: #1e40af;
+    --pp-blue-ring: rgba(37,99,235,.35);
+    --pp-blue-text: #fff;
+
+    /* light theme palette */
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --text: #111827;          /* near-black */
+    --muted: #6b7280;         /* gray-500 */
+    --border: #e5e7eb;        /* gray-200 */
+    --input-bg: #ffffff;
+    --shadow: 0 2px 8px rgba(0,0,0,.04);
+    --hover: #f3f4f6;         /* gray-100 */
+}
+
+[data-theme="dark"] {
+    --bg:        #121315;  /* app background */
+    --surface:   #181a1d;  /* cards/nav surfaces */
+    --text:      #e8eaed;  /* primary text */
+    --muted:     #a0a7b3;  /* secondary text */
+    --border:    #2a2d31;  /* subtle borders */
+    --primary:   #3b82f6;  /* blue you chose for buttons */
+    --primary-contrast: #0b1220; /* focus/pressed overlays if needed */
+
+    color-scheme: dark; /* better native form controls */
+}
+
+/* Use the neutral surfaces everywhere (removes the old dark-blue) */
+[data-theme="dark"] body,
+[data-theme="dark"] .mainReturn            { background: var(--bg) !important; color: var(--text); }
+[data-theme="dark"] .dashboard_header,
+[data-theme="dark"] .welcomeSec,
+[data-theme="dark"] .recentEpisodeContent,
+[data-theme="dark"] .actEpisodeItem1,
+[data-theme="dark"] .aeSubItem0,
+[data-theme="dark"] .recentVid,
+[data-theme="dark"] .video-card            { background: var(--surface); border-color: var(--border); color: var(--text); }
+
+/* Inputs / textareas / search */
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="search"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] textarea,
+[data-theme="dark"] .form-control          { background: #15171b; border-color: var(--border); color: var(--text); }
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder  { color: var(--muted); }
+
+/* Drag & drop zone */
+[data-theme="dark"] .videoDragDrop         { background: #15171b; border-color: var(--border); color: var(--muted); }
+
+/* Menus / dropdowns */
+[data-theme="dark"] .ellipsis-menu,
+[data-theme="dark"] .search-dropdown       { background: var(--surface); border-color: var(--border); box-shadow: 0 12px 32px rgba(0,0,0,.6); }
+[data-theme="dark"] .search-result-item:hover { background: #1f2329; }
+
+/* Comments area + composer */
+[data-theme="dark"] .video-comments        { border-top-color: var(--border); }
+[data-theme="dark"] .comment-composer textarea { background:#15171b; border-color: var(--border); color: var(--text); }
+
+/* Keep your blue buttons, but on neutral surfaces */
+[data-theme="dark"] .btn,
+[data-theme="dark"] .likeBtn,
+[data-theme="dark"] button.searchBtn {
+    background: var(--primary) !important;
+    color: #fff !important;
+    border-color: var(--primary) !important;
+}
+[data-theme="dark"] .btn:hover,
+[data-theme="dark"] .likeBtn:hover,
+[data-theme="dark"] button.searchBtn:hover {
+    filter: brightness(1.08);
+}
+
+/* Optional: make the light-logo visible on dark until you swap assets */
+[data-theme="dark"] .navbar-brand img { filter: brightness(0) invert(1); }
+
+/* --- Dark header + better contrast + force blue Search --- */
+[data-theme="dark"] .dashboard_header,
+[data-theme="dark"] .lightMode {               /* your navbar has .lightMode */
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border-bottom-color: var(--border) !important;
+}
+
+/* Search input in header */
+[data-theme="dark"] .navbar input[type="search"] {
+    background: #15171b !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+[data-theme="dark"] .navbar input[type="search"]::placeholder {
+    color: var(--muted) !important;
+}
+
+/* Make the Search button actually blue */
+[data-theme="dark"] button.searchBtn {
+    background: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: #fff !important;
+}
+/* In case the old rule `button.searchBtn{…}` overrides globally */
+button.searchBtn { background: var(--primary); border-color: var(--primary); color:#fff; }
+
+/* Card text/readability */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6,
+[data-theme="dark"] strong { color: #f3f4f6; }
+
+[data-theme="dark"] p,
+[data-theme="dark"] .form-label,
+[data-theme="dark"] small,
+[data-theme="dark"] .search-description,
+[data-theme="dark"] .vidSpan1,
+[data-theme="dark"] .contentHolder p {
+    color: var(--muted);
+}
+
+/* Cards/surfaces already set, but bump their borders for definition */
+[data-theme="dark"] .welcomeSec,
+[data-theme="dark"] .recentEpisodeContent,
+[data-theme="dark"] .actEpisodeItem1,
+[data-theme="dark"] .recentVid,
+[data-theme="dark"] .video-card {
+    border-color: var(--border) !important;
+}
+
+/* Keep logo visible on dark header */
+[data-theme="dark"] .navbar-brand img { filter: brightness(0) invert(1); }
+
+/* Footer matches dark theme + white logo */
+[data-theme="dark"] .footer {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border-top: 1px solid var(--border) !important;
+}
+
+/* Only invert the footer logo image */
+[data-theme="dark"] .footer img {
+    filter: brightness(0) invert(1) contrast(1.05);
+}
+/* White stats card: keep text dark even in dark theme */
+[data-theme="dark"] .statHolder {
+    background: #ffffff !important;
+    color: #0b0b0b !important;
+    border-color: #e5e7eb !important;
+}
+
+[data-theme="dark"] .statHolder h3,
+[data-theme="dark"] .statHolder p {
+    color: #0b0b0b !important;
+}

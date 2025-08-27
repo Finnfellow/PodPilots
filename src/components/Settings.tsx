@@ -112,14 +112,14 @@ const Settings: React.FC = () => {
             console.error('❌ Logo upload failed:', (e as any)?.message);
         }
     };
-    const handleLogoutClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
-        e.preventDefault();
+    const logoutAndResetTheme = async (e?: React.MouseEvent) => {
+        e?.preventDefault();
         try {
             await supabase.auth.signOut();
-        } catch (err) {
-            console.error('Logout failed:', err);
         } finally {
-            navigate('/'); // or '/login' if you prefer
+            // Force light theme for logged-out visitors
+            document.documentElement.setAttribute('data-theme', 'light');
+            navigate('/');
         }
     };
     const save = async () => {
@@ -230,12 +230,14 @@ const Settings: React.FC = () => {
                             {saving ? 'Saving…' : 'Save Changes'}
                         </button>
                     </div>
-                    <hr style={{ margin: '24px 0' }} />
-                    <div style={{ textAlign: 'center' }}>
-                        <a href="/logout" onClick={handleLogoutClick}>
+                    <hr style={{ margin: '16px 0', opacity: 0.25 }} />
+
+                    <p style={{ fontSize: '.95rem' }}>
+                        Want to sign out?{' '}
+                        <a href="#" onClick={logoutAndResetTheme}>
                             Click here to log out
                         </a>
-                    </div>
+                    </p>
 
                 </div>
             </div>

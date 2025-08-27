@@ -5,7 +5,7 @@ import { userService, type UserProfile, type PodcastMetadata } from '../utils/cl
 import {useLocation, useNavigate, Link} from "react-router-dom";
 import {sanitizeForStorage} from "../utils/sanatizefortorage.ts";
 import '../main/style.css';
-import AvatarDropdown from './AvatarDropdown';
+
 
 
 interface Episode {
@@ -333,10 +333,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         }
     };
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        navigate("/");
-    };
+
     const markOneRead = async (id: string) => {
         if (!user?.id) return;
 
@@ -1466,10 +1463,13 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                 )}
 
                                 {/* User Avatar */}
-                                <AvatarDropdown
-                                    avatarUrl={avatarUrl}
-                                    displayName={podcast_metadata?.name || 'User'}
-                                    onLogout={handleLogout}
+                                <button
+                                    className="dash_avatar"
+                                    onClick={() => navigate('/settings')}
+                                    title="Open settings"
+                                    style={{
+                                        backgroundImage: `url(${avatarUrl || '/default-avatar.png'})`,
+                                    }}
                                 />
                             </div>
                         </div>
@@ -2317,176 +2317,77 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                         </div>
 
 
-                                                        {/* Comments */}
-                                                        <div className="video-comments" style={{ marginTop: '1rem' }}>
+                                                        <div className="comments-block">
                                                             <h4>Comments</h4>
 
-                                                            {(() => {
-                                                                const list = comments[episode.slug] ?? [];
-
-                                                                // Build children map for ANY depth
-                                                                const childrenByParent: Record<string, CommentWithMetadata[]> = {};
-                                                                for (const c of list) {
-                                                                    const key = c.parent_id ?? '__root__';
-                                                                    (childrenByParent[key] ||= []).push(c);
-                                                                }
-
-                                                                const needsScroll = list.length > 3;
-
-                                                                // Recursive renderer
-                                                                const renderThread = (parentKey: string, depth = 0): React.ReactNode => {
-                                                                    const nodes = childrenByParent[parentKey] || [];
-                                                                    return nodes.map((c) => (
-                                                                        <div
-                                                                            id={'comment-' + String(c.id)}
-                                                                            key={c.id}
-                                                                            style={{
-                                                                                marginTop: depth ? 10 : 0,
-                                                                                marginLeft: depth ? 24 * Math.min(depth, 4) : 0, // cap indent if you want
-                                                                                fontSize: '0.9rem',
-                                                                            }}
-                                                                        >
-                                                                            {/* HEADER: avatar/name left, ⋮ right */}
-                                                                            <div
-                                                                                style={{
-                                                                                    display: 'flex',
-                                                                                    alignItems: 'center',
-                                                                                    justifyContent: 'space-between',
-                                                                                    gap: '0.5rem',
-                                                                                }}
-                                                                            >
-                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                                                    {c.podcast_metadata?.avatar_url && (
-                                                                                        <img
-                                                                                            src={c.podcast_metadata.avatar_url}
-                                                                                            alt="avatar"
-                                                                                            style={{ width: 28, height: 28, borderRadius: '50%' }}
-                                                                                        />
-                                                                                    )}
-                                                                                    <strong>{c.podcast_metadata?.name || 'User'}:</strong>
-                                                                                </div>
-
-                                                                                {user?.id === c.user_id && editingCommentId !== c.id && (
-                                                                                    <CommentActions
-                                                                                        visible
-                                                                                        onEdit={() => beginEdit(c.id, c.content)}
-                                                                                        onDelete={() => deleteComment(episode.slug, c.id)}
-                                                                                        menuKey={`episodes-${c.id}`}
+                                                            <div className="comments-list">
+                                                                {(comments[episode.slug] ?? []).map((comment) => (
+                                                                    <div key={comment.id} style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                                {comment.podcast_metadata?.avatar_url && (
+                                                                                    <img
+                                                                                        src={comment.podcast_metadata.avatar_url}
+                                                                                        alt="avatar"
+                                                                                        style={{ width: 28, height: 28, borderRadius: '50%' }}
                                                                                     />
                                                                                 )}
+                                                                                <strong>{comment.podcast_metadata?.name || 'User'}:</strong>
                                                                             </div>
 
-                                                                            {/* BODY / EDIT */}
-                                                                            {editingCommentId === c.id ? (
-                                                                                <>
-              <textarea
-                  value={editingText}
-                  onChange={(e) => setEditingText(e.target.value)}
-                  rows={2}
-                  style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      borderRadius: 6,
-                      border: '1px solid #ccc',
-                      marginTop: 8,
-                  }}
-              />
-                                                                                    <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                                                                                        <button
-                                                                                            className="btn btn-success btn-sm"
-                                                                                            disabled={savingEdit || !editingText.trim()}
-                                                                                            onClick={() => saveEdit(episode.slug, c.id)}
-                                                                                        >
-                                                                                            {savingEdit ? 'Saving…' : 'Save'}
-                                                                                        </button>
-                                                                                        <button className="btn btn-outline-secondary btn-sm" onClick={cancelCommentEdit}>
-                                                                                            Cancel
-                                                                                        </button>
-                                                                                    </div>
-                                                                                </>
-                                                                            ) : (
-                                                                                <>
-                                                                                    <div style={{ marginTop: '0.25rem' }}>{c.content}</div>
-                                                                                    <div style={{ fontSize: '0.75rem', color: '#888' }}>
-                                                                                        {new Date(c.created_at).toLocaleString()}
-                                                                                    </div>
-                                                                                </>
-                                                                            )}
+                                                                            <CommentActions
+                                                                                visible={user?.id === comment.user_id && editingCommentId !== comment.id}
+                                                                                onEdit={() => beginEdit(comment.id, comment.content)}
+                                                                                onDelete={() => deleteComment(episode.slug, comment.id)}
+                                                                                menuKey={`episodes-${comment.id}`}
+                                                                            />
+                                                                        </div>
 
-                                                                            {/* Reply toggle + input */}
-                                                                            <div style={{ marginTop: 6 }}>
-                                                                                <button
-                                                                                    onClick={() => setOpenReply((p) => ({ ...p, [c.id]: !p[c.id] }))}
-                                                                                    style={{
-                                                                                        background: 'transparent',
-                                                                                        border: 0,
-                                                                                        color: '#1A8C67',
-                                                                                        cursor: 'pointer',
-                                                                                        fontWeight: 600,
-                                                                                    }}
-                                                                                >
-                                                                                    {openReply[c.id] ? 'Cancel reply' : 'Reply'}
-                                                                                </button>
-                                                                            </div>
-
-                                                                            {openReply[c.id] && (
-                                                                                <div style={{ marginTop: 8 }}>
-              <textarea
-                  placeholder="Write a reply…"
-                  value={replyText[c.id] || ''}
-                  onChange={(e) => setReplyText((prev) => ({ ...prev, [c.id]: e.target.value }))}
-                  rows={2}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc' }}
-              />
+                                                                        {editingCommentId === comment.id ? (
+                                                                            <>
+            <textarea
+                value={editingText}
+                onChange={(e) => setEditingText(e.target.value)}
+                rows={2}
+                style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc', marginTop: 8 }}
+            />
+                                                                                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                                                                                     <button
-                                                                                        onClick={() => handleReplySubmit(episode.slug, c.id)}
                                                                                         className="btn btn-success btn-sm"
-                                                                                        style={{ marginTop: 6 }}
-                                                                                        disabled={!(replyText[c.id] || '').trim()}
+                                                                                        disabled={savingEdit || !editingText.trim()}
+                                                                                        onClick={() => saveEdit(episode.slug, comment.id)}
                                                                                     >
-                                                                                        Reply
+                                                                                        {savingEdit ? 'Saving…' : 'Save'}
+                                                                                    </button>
+                                                                                    <button className="btn btn-outline-secondary btn-sm" onClick={cancelCommentEdit}>
+                                                                                        Cancel
                                                                                     </button>
                                                                                 </div>
-                                                                            )}
-
-                                                                            {/* Recurse into children */}
-                                                                            {renderThread(c.id, depth + 1)}
-                                                                        </div>
-                                                                    ));
-                                                                };
-
-                                                                return (
-                                                                    <div
-                                                                        className={`comments-list ${needsScroll ? 'scrollable' : ''}`}
-                                                                        style={{
-                                                                            marginBottom: '0.5rem',
-                                                                            maxHeight: needsScroll ? 240 : 'none',
-                                                                            overflowY: needsScroll ? 'auto' : 'visible',
-                                                                            paddingRight: needsScroll ? 12 : 0,
-                                                                        }}
-                                                                    >
-                                                                        {renderThread('__root__')}
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <div style={{ marginTop: '0.25rem' }}>{comment.content}</div>
+                                                                                <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                                                                                    {new Date(comment.created_at).toLocaleString()}
+                                                                                </div>
+                                                                            </>
+                                                                        )}
                                                                     </div>
-                                                                );
-                                                            })()}
+                                                                ))}
+                                                            </div>
 
-                                                            {/* New root comment */}
-                                                            <textarea
-                                                                placeholder="Add a comment..."
-                                                                value={newComment[episode.slug] || ''}
-                                                                onChange={(e) => setNewComment((prev) => ({ ...prev, [episode.slug]: e.target.value }))}
-                                                                rows={2}
-                                                                style={{
-                                                                    width: '100%',
-                                                                    padding: '0.5rem',
-                                                                    borderRadius: '6px',
-                                                                    border: '1px solid #ccc',
-                                                                    marginBottom: '0.25rem',
-                                                                }}
-                                                            />
-                                                            <button onClick={() => handleCommentSubmit(episode.slug)} className="btn" style={{ borderRadius: 6 }}>
-                                                                Post Comment
-                                                            </button>
+                                                            <div className="comment-composer">
+    <textarea
+        placeholder="Add a comment..."
+        value={newComment[episode.slug] || ''}
+        onChange={(e) => setNewComment(prev => ({ ...prev, [episode.slug]: e.target.value }))}
+        rows={2}
+        style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc' }}
+    />
+                                                                <button className="btn" onClick={() => handleCommentSubmit(episode.slug)} style={{ marginTop: 6 }}>
+                                                                    Post Comment
+                                                                </button>
+                                                            </div>
                                                         </div>
 
 

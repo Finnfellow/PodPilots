@@ -112,7 +112,16 @@ const Settings: React.FC = () => {
             console.error('❌ Logo upload failed:', (e as any)?.message);
         }
     };
-
+    const handleLogoutClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        try {
+            await supabase.auth.signOut();
+        } catch (err) {
+            console.error('Logout failed:', err);
+        } finally {
+            navigate('/'); // or '/login' if you prefer
+        }
+    };
     const save = async () => {
         if (!user?.id) return;
         const name = displayName.trim();
@@ -150,9 +159,6 @@ const Settings: React.FC = () => {
             <div className="welcomeSec">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                     <h2 style={{ margin: 0 }}>Settings</h2>
-                    <button className="btn btn-outline-secondary" onClick={() => navigate(-1)}>
-                        ← Back
-                    </button>
                 </div>
 
                 <div style={{ display: 'grid', gap: 16 }}>
@@ -224,10 +230,19 @@ const Settings: React.FC = () => {
                             {saving ? 'Saving…' : 'Save Changes'}
                         </button>
                     </div>
+                    <hr style={{ margin: '24px 0' }} />
+                    <div style={{ textAlign: 'center' }}>
+                        <a href="/logout" onClick={handleLogoutClick}>
+                            Click here to log out
+                        </a>
+                    </div>
+
                 </div>
             </div>
         </div>
+
     );
+
 };
 
 export default Settings;

@@ -559,7 +559,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
         }
     };
 
-    const handleLike = async (slug: string) => {
+    /*const handleLike = async (slug: string) => {
         const { error } = await supabase.rpc("increment_like_count", { slug_input: slug });
         if (error) { console.error("❌ Failed to like video:", error.message); return; }
 
@@ -569,7 +569,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
 
         // ✅ then refetch to stay accurate
         if (user?.id) await Promise.all([fetchRecentVideos(user.id), fetchUserEpisodes(user.id)]);
-    };
+    };*/
     const handleCommentSubmit = async (slug: string) => {
         const text = (newComment[slug] || '').trim();
         if (!text || !user?.id) return;
@@ -1567,8 +1567,8 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                     </div>
 
                                     <div className={'welcomeSec'}>
-                                        <div>
-                                            <h5><em>Upload Preview</em></h5>
+                                        <div style={{'position': 'relative'}}>
+                                            <h5 className={'position-absolute vidPre'}><em>Upload Preview</em></h5>
 
                                             {videoUrl && (
                                                 <div className={'vidPreHolder'}>
@@ -2301,7 +2301,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                             }}
                                                         >
                                                             <span>❤️ {episode.likeCount ?? 0} Likes</span>
-                                                            <button
+                                                            {/*<button
                                                                 style={{
                                                                     background: 'rgba(240,79,79,0)',
                                                                     color: 'white',
@@ -2313,7 +2313,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                                                 onClick={() => handleLike(episode.slug)}
                                                             >
                                                                 Like
-                                                            </button>
+                                                            </button>*/}
                                                         </div>
 
 
@@ -2345,12 +2345,12 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
 
                                                                         {editingCommentId === comment.id ? (
                                                                             <>
-            <textarea
-                value={editingText}
-                onChange={(e) => setEditingText(e.target.value)}
-                rows={2}
-                style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc', marginTop: 8 }}
-            />
+                                                                                    <textarea
+                                                                                        value={editingText}
+                                                                                        onChange={(e) => setEditingText(e.target.value)}
+                                                                                        rows={2}
+                                                                                        style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc', marginTop: 8 }}
+                                                                                    />
                                                                                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                                                                                     <button
                                                                                         className="btn btn-success btn-sm"

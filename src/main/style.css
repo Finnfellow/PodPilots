@@ -20,7 +20,7 @@
 }
 .lightMode #loginButton:hover, .post_bannerLM .btn:hover, .slogan .translate-button:hover,
 .modal-content button.btn:hover, button.searchBtn:hover{
-    color: #000 !important;
+    color: #fff !important;
     background-color: #0629e2 !important;
     border-color: #40514E !important;
 }
@@ -151,7 +151,7 @@
 }
 
 .banner img {
-    width: 80%;
+    width: 55%;
     height: auto;
     display: block;
     margin: auto;
@@ -359,14 +359,14 @@
 .mainSec{
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 0.5rem 0;
 }
 
 .welcomeSec{
     background-color: #fff;
     border-radius: 12px;
     padding: 2rem;
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
     border: 1px solid #E8E8E8;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
@@ -405,23 +405,32 @@
 
 .txtC h3{
     font-family: Satoshi, sans-serif;
-    font-size: 1rem;
+    font-size: 18pt;
     font-weight: 500;
     color: #495057;
     margin-bottom: 1rem;
 }
 
 .vidPreHolder{
-    margin-top: 2rem;
     text-align: center;
 }
 
 .vidPreHolder h3{
     font-family: Satoshi, sans-serif;
-    font-size: 1rem;
+    font-size: 16pt;
     font-weight: 500;
     color: #495057;
     margin-bottom: 1rem;
+}
+
+.vidPre{
+    background-color: rgba(255,255,255,0.6);
+    transform: translate(0%, 0%);
+    font-size: 18pt;
+    align-content: center;
+    text-align: center;
+    width: 100%;
+    height: 100%;
 }
 
 .videoContent{
@@ -446,7 +455,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: .5rem;
 }
 
 .statHolder{
@@ -834,7 +843,7 @@
 
 .videoDragDrop{
     width: fit-content;
-    margin: auto;
+    margin: 1rem auto;
 }
 
 .comments-list {
@@ -856,16 +865,7 @@
 .comments-list.scrollable {
     padding-right: 14px; /* nudge content (incl. ⋮) left a bit */
 }
-.likeBtn{
-    background:#f04f4f;
-    color:#fff;
-    border:0;
-    border-radius:4px;
-    padding:0.25rem 0.5rem;
-    cursor:pointer;
-    transition:filter .15s ease-in-out;
-}
-.likeBtn:hover{ filter:brightness(0.95); }
+
 
 .podcast-desc{
     white-space: normal !important;
@@ -1214,3 +1214,14 @@ button.searchBtn { background: var(--primary); border-color: var(--primary); col
 [data-theme="dark"] .statHolder p {
     color: #0b0b0b !important;
 }
+
+.likeBtn{
+    background:red !important;
+    color:#fff !important;
+    border:0;
+    border-radius:4px;
+    padding:0.25rem 0.5rem;
+    cursor:pointer;
+    transition:filter .15s ease-in-out;
+}
+.likeBtn:hover{ filter:brightness(0.95) !important;background:darkred !important; }

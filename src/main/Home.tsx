@@ -227,12 +227,32 @@ function Home() {
                 </video>
 
                 <div className="overlay position-absolute top-0 start-0 w-100 h-100" />
-                <div className="slogan position-absolute translate-middle top-50 start-50 text-white transition-in">
-                    <img className="img-fluid mb-3 translate-left" src="/Drawable/PodPilot-Wordmark_black_banner.png" alt="PodPilot Slogan" />
-                    <h1 className="text-shadow text-center">Discover True Podcasting Freedom</h1>
-                    <button className="btn btn-lg px-4" onClick={() => openAuth('signup')}>
-                        Get Started Free
-                    </button>
+                <div className="container-fluid slogan position-absolute translate-middle top-50 start-50 text-white transition-in">
+                    <div className="container">
+                        <div className="row p-4">
+                            <div className="col-12">
+                                <div className="row">
+                                    <div className="col-12">
+                                        <img className="img-fluid mb-3" style={{float:'left'}} src="/Drawable/PodPilot-Wordmark_black_banner.png" alt="PodPilot Slogan" />
+
+                                    </div>
+                                </div>
+                                <div className="row">
+                                    <div className="col-12">
+                                        <h1 className="text-shadow text-center" style={{fontSize:'xxx-large'}}>Discover True Podcasting Freedom</h1>
+
+                                    </div>
+                                </div>
+                                <div className="row">
+                                    <div className="col-12">
+                                        <button className="btn btn-lg px-4" style={{float:'right'}} onClick={() => openAuth('signup')}>
+                                            Get Started Free
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
             </div>
@@ -243,23 +263,28 @@ function Home() {
                 <div className="container py-4">
 
                     <div className="row p-4 share_section" >
-                        <div className="col-5 child1">
-                            <h2 className="py-2">
+                        <div
+                            className="col-5 child1 d-flex flex-column justify-content-between"
+                            style={{ minHeight: "100%" }}
+                        >
+                            <h1 className="py-2 align-self-start" style={{ fontSize: "40pt" }}>
                                 Share and Grow
-                            </h2>
-                            <p className="py-2">
+                            </h1>
+
+                            <p className="py-2" style={{ fontSize: "18pt" }}>
                                 Share your favorite video content and Podcasters on <strong>PodPilot</strong>.
                                 Enlighten yourself and others with unique ideas or views!
                                 PodPilot will increase your social reach as a Podcaster.
                             </p>
+
                             <button
-                                className="btn btn-lg px-4 txtC"
+                                className="btn btn-lg px-4 txtC align-self-start"
                                 onClick={() => openAuth('signup')}
                             >
                                 Get Started Free
                             </button>
                         </div>
-                        <div className="col-5">
+                        <div className="col-6">
                             <img src="/Drawable/sharing_content.jpg" alt="Friends sharing social podcast content." className="img-fluid" />
                         </div>
 
@@ -313,7 +338,7 @@ function Home() {
                         <div className="modal-content modalLM">
                             <div className="modal-header">
                                 <h5 className="modal-title">
-                                    {authOpen === 'signup' ? 'Create your account' : 'Welcome back'}
+                                    {authOpen === 'signup' ? 'Create your account' : 'Sign in'}
                                 </h5>
                                 <button type="button" className="btn-close" onClick={closeAuth} />
                             </div>
@@ -326,16 +351,16 @@ function Home() {
                                 )}
 
                                 {/* OAuth first */}
-                                <div className="text-center my-2">Sign up with</div>
+                                <div className="text-center my-2">Continue with</div>
                                 <button
                                     className="btn w-100 mb-2"
                                     onClick={signInWithOAuth}
                                     disabled={authLoading}
                                 >
-                                    Continue with Google
+                                    Google
                                 </button>
 
-                                <div className="text-center my-2">or use email</div>
+                                <div className="text-center my-2">or</div>
 
                                 {/* Email / password */}
                                 <div className="mb-3">

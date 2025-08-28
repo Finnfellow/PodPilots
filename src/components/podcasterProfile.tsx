@@ -1,8 +1,9 @@
 // PodcasterProfile.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect} from 'react';
 import { supabase } from '../supabaseClient';
 import '../main/style.css';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+
 
 interface MediaFile {
     file_name: string;
@@ -16,6 +17,7 @@ interface PodcastMetadata {
     display_name: string;
     description: string;
     avatar_url?: string;
+    name?: string;
 }
 
 interface CommentWithMetadata {
@@ -30,6 +32,15 @@ interface CommentWithMetadata {
         avatar_url?: string;
     };
 }
+
+interface PodcastStats {
+    totalEpisodes: number;
+    totalPlays: number;
+    rssUrl: string;
+    lastUpload: string;
+}
+
+
 
 const PodcasterProfile: React.FC = () => {
     const { user_id } = useParams<{ user_id: string }>();
@@ -48,6 +59,8 @@ const PodcasterProfile: React.FC = () => {
     const [replyText, setReplyText] = useState<Record<string, string>>({});
     const location = useLocation();
     const [viewerMeta, setViewerMeta] = useState<{ display_name: string | null; avatar_url: string | null } | null>(null);
+
+    const [podcast_metadata, setPodcast_metadata] = useState<PodcastMetadata | null>(null);
 
     // Header visibility on scroll
     const [showNavbar, setShowNavbar] = useState(true);
@@ -92,7 +105,7 @@ const PodcasterProfile: React.FC = () => {
             if (me?.id) {
                 const { data: myMeta } = await supabase
                     .from('podcast_metadata')
-                    .select('display_name, avatar_url')
+                    .select('display_name, avatar_url,name')
                     .eq('user_id', me.id)
                     .single();
                 setViewerMeta(myMeta ?? null);
@@ -257,6 +270,29 @@ const PodcasterProfile: React.FC = () => {
         window.addEventListener('hashchange', onHashChange);
         return () => window.removeEventListener('hashchange', onHashChange);
     }, [videos]);
+
+    useEffect(() => {
+        // ✅ STEP 2: Fetch the latest podcast metadata on mount
+        const fetchMetadata = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data, error } = await supabase
+                .from('podcast_metadata')
+                .select('*')
+                .eq('user_id', user.id)
+                .single();
+
+            if (error) {
+                console.error('❌ Failed to fetch podcast metadata:', error.message);
+            } else {
+                setPodcast_metadata(data);
+            }
+        };
+
+        fetchMetadata();
+    }, []);
+
 
     // ---- likes ----
     const handleLike = async (slug: string, index: number) => {
@@ -561,6 +597,30 @@ const PodcasterProfile: React.FC = () => {
         }
     };
 
+    // Calculate dynamic stats
+    const stats: PodcastStats = {
+        totalEpisodes: videos.length,
+        totalPlays: videos.reduce(
+            (total, _) => total + (Math.floor(Math.random() * 100) + 10),
+            0
+        ),
+        rssUrl: `https://podpilot.com/feeds/${
+            (podcast_metadata?.name ?? metadata?.display_name ?? 'your-podcast')
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+        }.xml`,
+
+        lastUpload: videos.length
+            ? new Date(
+                Math.max(...videos.map(v => new Date(v.uploaded_at).getTime()))
+            ).toLocaleDateString()
+            : "No uploads yet",
+    };
+
+
+
+
+
     return (
         <div className={'mainReturn post_bannerLM'}>
             {metadata ? (
@@ -598,7 +658,7 @@ const PodcasterProfile: React.FC = () => {
                                                 e.preventDefault();
                                                 handleSearch();
                                             }}
-                                            style={{ position: 'relative', alignItems: 'center', gap: '0.5rem' }}
+                                            style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                                         >
                                             <input
                                                 id="searchInput"
@@ -622,7 +682,7 @@ const PodcasterProfile: React.FC = () => {
                                                                 key={`creator-${item.user_id}`}
                                                                 className="search-result-item"
                                                                 onClick={() => navigate(`/podcasters/${item.user_id}`)}
-                                                            >
+                                                                >
                                                                 <img src={item.avatar_url || '/default-avatar.png'} alt="avatar" className="search-avatar" />
                                                                 <div>
                                                                     <div className="search-name">{item.display_name || 'Creator'}</div>
@@ -673,17 +733,35 @@ const PodcasterProfile: React.FC = () => {
                     <div className="container">
                         <div className="row pt-3">
                             <div className="col-12">
-                                <div
-                                    className={'welcomeSec px-3'}
-                                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: 'fit-content', padding: '1rem 0' }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <img
-                                            src={metadata.avatar_url || '/default-avatar.png'}
-                                            alt="Avatar"
-                                            style={{ width: '64px', height: '64px', borderRadius: '50%' }}
-                                        />
-                                        <h2 style={{ margin: 0 }}>{metadata.display_name}</h2>
+                                <div className={'d-flex gap-3'}>
+                                    <div
+                                        className={'welcomeSec px-3'}
+                                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: 'fit-content', padding: '1rem 0' }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                            <img
+                                                src={metadata.avatar_url || '/default-avatar.png'}
+                                                alt="Avatar"
+                                                style={{ width: '64px', height: '64px', borderRadius: '50%' }}
+                                            />
+                                            <h2 style={{ margin: 0 }}>{metadata.display_name}</h2>
+                                        </div>
+
+                                    </div>
+                                    {/* Stats Grid */}
+                                    <div className={'statContent'}>
+                                        <div className={'statHolder'}>
+                                            <h3>Total Episodes</h3>
+                                            <p>{stats.totalEpisodes}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Stats Grid */}
+                                    <div className={'statContent'}>
+                                        <div className={'statHolder'}>
+                                            <h3>Last Upload</h3>
+                                            <p>{stats.lastUpload}</p>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -753,12 +831,12 @@ const PodcasterProfile: React.FC = () => {
                                                                         {/* BODY / EDIT */}
                                                                         {editingCommentId === c.id ? (
                                                                             <>
-                    <textarea
-                        value={editingText}
-                        onChange={(e) => setEditingText(e.target.value)}
-                        rows={2}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc', marginTop: 8 }}
-                    />
+                                                                                <textarea
+                                                                                    value={editingText}
+                                                                                    onChange={(e) => setEditingText(e.target.value)}
+                                                                                    rows={2}
+                                                                                    style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc', marginTop: 8 }}
+                                                                                />
                                                                                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                                                                                     <button
                                                                                         className="btn btn-success btn-sm"
@@ -791,13 +869,13 @@ const PodcasterProfile: React.FC = () => {
 
                                                                         {openReply[c.id] && (
                                                                             <div style={{ marginTop: 8, paddingLeft: 36 }}>
-                    <textarea
-                        placeholder="Write a reply…"
-                        value={replyText[c.id] || ''}
-                        onChange={(e) => setReplyText(prev => ({ ...prev, [c.id]: e.target.value }))}
-                        rows={2}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc' }}
-                    />
+                                                                                    <textarea
+                                                                                        placeholder="Write a reply…"
+                                                                                        value={replyText[c.id] || ''}
+                                                                                        onChange={(e) => setReplyText(prev => ({ ...prev, [c.id]: e.target.value }))}
+                                                                                        rows={2}
+                                                                                        style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc' }}
+                                                                                    />
                                                                                 <button
                                                                                     onClick={() => requireAuth(() => handleReplySubmit(video.slug, c.id))}
                                                                                     className="btn btn-success btn-sm"
@@ -832,12 +910,12 @@ const PodcasterProfile: React.FC = () => {
 
                                                                                 {editingCommentId === rep.id ? (
                                                                                     <>
-                        <textarea
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            rows={2}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc', marginTop: 8 }}
-                        />
+                                                                                            <textarea
+                                                                                                value={editingText}
+                                                                                                onChange={(e) => setEditingText(e.target.value)}
+                                                                                                rows={2}
+                                                                                                style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc', marginTop: 8 }}
+                                                                                            />
                                                                                         <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                                                                                             <button
                                                                                                 className="btn btn-success btn-sm"
@@ -867,13 +945,13 @@ const PodcasterProfile: React.FC = () => {
 
                                                     {/* COMPOSER (pinned) */}
                                                     <div className="comment-composer" style={{ marginTop: 6 }}>
-        <textarea
-            placeholder="Add a comment..."
-            value={newComment[video.slug] || ''}
-            onChange={(e) => setNewComment(prev => ({ ...prev, [video.slug]: e.target.value }))}
-            rows={2}
-            style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc' }}
-        />
+                                                        <textarea
+                                                            placeholder="Add a comment..."
+                                                            value={newComment[video.slug] || ''}
+                                                            onChange={(e) => setNewComment(prev => ({ ...prev, [video.slug]: e.target.value }))}
+                                                            rows={2}
+                                                            style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc' }}
+                                                        />
                                                         <button className="btn" onClick={() => requireAuth(() => handleCommentSubmit(video.slug))} style={{ marginTop: 6 }}>
                                                             Post Comment
                                                         </button>

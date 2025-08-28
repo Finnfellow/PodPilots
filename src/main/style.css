@@ -40,40 +40,6 @@
     border: #000 !important;
 }
 
-/*end*/
-
-/*DarkMode*/
-/*.darkMode{
-    display: none;
-    background-color: #000 !important;
-    color: #fff !important;
-}
-
-.darkMode #loginButton, .post_bannerDM .btn, .slogan button.translate-button,
-.modal-content button.btn{
-    color: #000 !important;
-    background-color: #E4F9F5 !important;
-    border-color: #30E3CA !important;
-}
-.darkMode #loginButton:hover, .post_bannerDM .btn:hover, .slogan button.translate-button:hover,
-.modal-content button.btn:hover{
-    color: #000 !important;
-    background-color: #30E3CA !important;
-    border-color: #40514E !important;
-}
-
-.post_bannerDM{
-    background-color: #111312 !important;
-    color: #fff !important;
-}
-
-.modalDM{
-    background-color: #111312 !important;
-    color: #fff !important;
-    border: #fff !important;
-}*/
-
-/*end*/
 
 .navbar-brand img{
     width: 50%;
@@ -227,18 +193,20 @@
     font-weight: 500;
     font-size: 0.9rem;
     cursor: pointer;
-    color: #000;
-    background: transparent none;
-    transition: all 0.2s ease;
+    color: var(var(--text, #0f172a));   /* uses CSS var if present */
+    background: transparent;
+    transition: background .2s ease, color .2s ease;
     text-transform: capitalize;
 }
-
+/* Hover */
 .navi_buttons:hover{
-    background: #0629e2;
+    background: rgba(37, 99, 235, .08); /* subtle blue tint */
 }
 
+/* Active (highlight) */
 .navi_buttons.active{
-    background: #0629e2;
+    background: #2563eb;   /* brand blue */
+    color: #fff;
 }
 
 
@@ -1010,18 +978,17 @@ button:disabled,
 }
 
 /* Your custom buttons → blue */
+/* AFTER */
 .searchBtn,
 .upload,
-.likeBtn,
-.navi_buttons{
+.likeBtn{
     background-color: var(--pp-blue) !important;
     border-color: var(--pp-blue) !important;
     color: var(--pp-blue-text) !important;
 }
 .searchBtn:hover,
 .upload:hover,
-.likeBtn:hover,
-.navi_buttons:hover{
+.likeBtn:hover{
     background-color: var(--pp-blue-hover) !important;
     border-color: var(--pp-blue-hover) !important;
 }
@@ -1050,7 +1017,43 @@ button:disabled,
     background-color: var(--pp-blue-hover) !important;
     border-color: var(--pp-blue-hover) !important;
 }
+/* NAV TABS: only active is filled */
+.dashboard_header .navi_buttons{
+    background: transparent !important;         /* base = hollow */
+    color: #0f172a;                             /* light text */
+}
+.dashboard_header .navi_buttons:hover:not(.active){
+    background: rgba(37,99,235,.08);            /* subtle hover */
+}
+.dashboard_header .navi_buttons.active{
+    background: #2563eb !important;             /* filled only when active */
+    color: #0b0b0b !important;
+}
+/* Inactive tab text color by theme */
+body:not([data-theme="dark"]) .dashboard_header .navi_buttons:not(.active){
+    color: #0b0b0b !important;   /* black in light mode */
+}
 
+[data-theme="dark"] .dashboard_header .navi_buttons:not(.active){
+    color: #e5e7eb !important;   /* light-gray in dark mode */
+}
+
+body:not([data-theme="dark"]) .dashboard_header .navi_buttons:hover:not(.active){
+    background: rgba(37,99,235,.08) !important;
+}
+
+
+/* Dark mode */
+[data-theme="dark"] .dashboard_header .navi_buttons{
+    color: #e5e7eb;
+}
+[data-theme="dark"] .dashboard_header .navi_buttons:hover:not(.active){
+    background: rgba(59,130,246,.15);
+}
+[data-theme="dark"] .dashboard_header .navi_buttons.active{
+    background: #3b82f6 !important;
+    color: #0b1220 !important; /* or #fff if you prefer */
+}
 
 
 /* ===== THEME VARIABLES ===== */
@@ -1215,8 +1218,61 @@ button.searchBtn { background: var(--primary); border-color: var(--primary); col
     color: #0b0b0b !important;
 }
 
+/* Dark mode tweaks */
+[data-theme="dark"] .navi_buttons{
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .navi_buttons:hover{
+    background: rgba(37, 99, 235, .15);
+}
+
+[data-theme="dark"] .navi_buttons.active{
+    background: #3b82f6;   /* slightly lighter for contrast on dark */
+    color: #0b1220;        /* or keep #fff if you prefer */
+}
+/* Dark mode: tab text = white */
+[data-theme="dark"] .dashboard_header .navi_buttons:not(.active){
+    color: #fff !important;     /* inactive tabs */
+}
+
+[data-theme="dark"] .dashboard_header .navi_buttons.active{
+    background: #3b82f6 !important; /* keep your blue pill */
+    color: #fff !important;          /* active tab text */
+}
+/* Dark mode: make INACTIVE tab text white */
+[data-theme="dark"] .dashboard_header .navi_buttons:not(.active) {
+    color: #fff !important;
+}
+/* Reset nav buttons so global blue rules don't win */
+.dashboard_header .navi_buttons {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: #111827 !important;            /* light mode: inactive = black */
+}
+
+/* Active tab (both themes): blue pill, white text */
+.dashboard_header .navi_buttons.active {
+    background: var(--pp-blue) !important;
+    border-color: var(--pp-blue) !important;
+    color: #fff !important;
+}
+
+/* DARK MODE: INACTIVE tabs = white text */
+[data-theme="dark"] .dashboard_header .navi_buttons:not(.active) {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff;        /* Safari */
+}
+
+/* Optional: keep white on hover too */
+[data-theme="dark"] .dashboard_header .navi_buttons:hover:not(.active) {
+    background: rgba(255,255,255,.06) !important;
+    color: #fff !important;
+    -webkit-text-fill-color: #fff;
+}
+
 .likeBtn{
-    background:red !important;
+    background: rgba(255, 1, 1, 0.87) !important;
     color:#fff !important;
     border:0;
     border-radius:4px;

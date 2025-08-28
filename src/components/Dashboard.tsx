@@ -61,8 +61,8 @@ export const getLogoPublicUrl = (path: string): string => {
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ }) => {
-    type Tab = 'Home' | 'episodes';
-    const [activeTab, setActiveTab] = useState<'Home' | 'episodes'>('Home');
+    type Tab = 'Home' | 'Episodes';
+    const [activeTab, setActiveTab] = useState<'Home' | 'Episodes'>('Home');
     const navigate = useNavigate();
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [podcast_metadata, setPodcast_metadata] = useState<PodcastMetadata | null>(null);
@@ -112,6 +112,15 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
 
 
     const notifRef = React.useRef<HTMLDivElement | null>(null);
+    useEffect(() => {
+        const q = new URLSearchParams(location.search);
+        if (!q.get('tab')) {
+            navigate('?tab=Home', { replace: true });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+
     useEffect(() => {
         const onDocClick = (e: MouseEvent) => {
             if (!showNotifPanel) return;
@@ -1007,7 +1016,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
     }, []);
 
     useEffect(() => {
-        if (activeTab !== 'episodes') return;
+        if (activeTab !== 'Episodes') return;
         const slugs = episodes.map(e => e.slug).filter(Boolean);
         if (slugs.length) fetchComments(slugs);
     }, [activeTab, episodes]);
@@ -1205,7 +1214,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                         </button>
                         <div className="collapse navbar-collapse" id="navbarScroll">
                             <div className="d-flex p-1">
-                                {(['Home', 'episodes'] as Tab[]).map((tab) => (
+                                {(['Home', 'Episodes'] as Tab[]).map((tab) => (
                                     <button
                                         key={tab}
                                         className={`navi_buttons ${activeTab === tab ? 'active' : ''}`}
@@ -1213,7 +1222,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
                                             setActiveTab(tab);
                                             navigate(`?tab=${tab}`, { replace: false });
                                         }}
-                                        >
+                                    >
                                         {tab}
                                     </button>
                                 ))}
@@ -2237,7 +2246,7 @@ const Dashboard: React.FC<DashboardProps> = ({ }) => {
 
                 <div className="row px-5">
                     <div className="col-12">
-                        {activeTab === 'episodes' && (
+                        {activeTab === 'Episodes' && (
                             <div className={'actEpisodeContent'}>
                                 <div className={'actEpisodeItem0'}>
                                     <h2>Your Collection of Episodes</h2>
